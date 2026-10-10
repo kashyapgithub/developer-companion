@@ -166,3 +166,13 @@ node server/query_logs.js groups
 ## License
 
 MIT. Designed and built by [Kashyap](https://github.com/kashyapgithub).
+undefined
+JSON.stringify({log:window.__genieOpenLog,perf:window.__geniePerf},null,)
+                
+'{"log":{"clickT":9377,"morphStartT":9944},"perf":{"kind":"close","book":"genie","t0":11930,"frames":[0,15.8,17.3,17.2,16.1,16.9,16.1,17.5,16.4,16.3,16.8,17,16.8,17,16,17.3,16.7,16.9,15.9,17,16.9,16.9,16,17.3],"tasks":[],"marks":{"morphMs":381},"_last":12310.2,"total":"close-done"}}'
+JSON.stringify({log:window.__genieOpenLog,perf:window.__geniePerf},null,)
+                
+'{"log":{"clickT":9377,"morphStartT":9944},"perf":{"kind":"close","book":"genie","t0":11930,"frames":[0,15.8,17.3,17.2,16.1,16.9,16.1,17.5,16.4,16.3,16.8,17,16.8,17,16,17.3,16.7,16.9,15.9,17,16.9,16.9,16,17.3],"tasks":[],"marks":{"morphMs":381},"_last":12310.2,"total":"close-done"}}'
+JSON.stringify({log:window.__genieOpenLog,perf:window.__geniePerf},null,)
+                
+'{"log":{"clickT":9377,"morphStartT":9944},"perf":{"kind":"close","book":"genie","t0":11930,"frames":[0,15.8,17.3,17.2,16.1,16.9,16.1,17.5,16.4,16.3,16.8,17,16.8,17,16,17.3,16.7,16.9,15.9,17,16.9,16.9,16,17.3],"tasks":[],"marks":{"morphMs":381},"_last":12310.2,"total":"close-done"}}'
