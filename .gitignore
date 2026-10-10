@@ -1,0 +1,9 @@
+node_modules/
+server/node_modules/
+.data/
+server/.data/
+logs.db
+*.log
+config.local.json
+.DS_Store
+sources/

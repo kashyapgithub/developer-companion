@@ -1,0 +1,403 @@
+/**
+ * server.js — Unified Agent Companion Bridge & MCP Server
+ *
+ * One process, two jobs:
+ *   1. Local HTTP API on port 5959 (with /save, /logs, /commands, /health, /api/github/context)
+ *   2. Model Context Protocol (MCP) server over stdio exposing tools to coding agents
+ *      (Claude Code, Cursor, Antigravity, Windsurf, Gemini CLI)
+ */
+
+import http from "node:http";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { z } from "zod";
+import {
+  writeSketch,
+  readSketch,
+  insertLogs,
+  queryRecentLogs,
+  queryLogGroups,
+  queryLogTrace,
+  writeGitHubContext,
+  readGitHubContext,
+  insertCommand,
+  getPendingCommands,
+  updateCommand,
+  getSummaryStats,
+} from "./storage.js";
+import { readConfig, codeMatches } from "./config.js";
+
+const PORT = Number(process.env.PORT) || Number(process.env.LOG_SERVER_PORT) || 5959;
+const MAX_BODY_BYTES = 60 * 1024 * 1024; // 60MB for large PNG wireframes
+
+const config = readConfig();
+const HOST = config.lan ? "0.0.0.0" : "127.0.0.1";
+
+const LOOPBACK = new Set(["127.0.0.1", "::1", "::ffff:127.0.0.1"]);
+const isLoopback = (req) => LOOPBACK.has(req.socket.remoteAddress);
+const needsCode = (req) => config.lan && !isLoopback(req);
+const isAuthorized = (req) => !needsCode(req) || codeMatches(req.headers["x-sketch-token"] || req.headers["x-access-token"], config.token);
+
+startHttpReceiver();
+startMcpServer();
+
+// ===========================================================================
+// Job 1: HTTP API Bridge (Browser Extensions & Web Clients)
+// ===========================================================================
+function startHttpReceiver() {
+  const server = http.createServer((req, res) => {
+    // Open CORS headers
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-Sketch-Token, X-Access-Token");
+
+    if (req.method === "OPTIONS") {
+      res.writeHead(204);
+      res.end();
+      return;
+    }
+
+    const url = new URL(req.url, `http://${req.headers.host || "localhost"}`);
+    const pathname = url.pathname;
+
+    // Health check
+    if (pathname === "/" || pathname === "/health") {
+      respondJson(res, 200, {
+        ok: true,
+        service: "developer-companion",
+        port: PORT,
+        lan: config.lan,
+        authRequired: needsCode(req),
+        authorized: isAuthorized(req),
+        stats: getSummaryStats(),
+      });
+      return;
+    }
+
+    // Save Sketch (from UI Sketch Canvas)
+    if (req.method === "POST" && (pathname === "/save" || pathname === "/api/sketch")) {
+      if (!isAuthorized(req)) {
+        respondJson(res, 401, { ok: false, error: "Unauthorized — access code required" });
+        return;
+      }
+      readJsonBody(req, res, (payload) => {
+        try {
+          writeSketch({ json: payload.json, pngBase64: payload.pngBase64 });
+          respondJson(res, 200, { ok: true, message: "Sketch saved successfully" });
+        } catch (err) {
+          respondJson(res, 400, { ok: false, error: String(err) });
+        }
+      });
+      return;
+    }
+
+    // Insert Logs (from Chrome Debug Logger or Browser)
+    if (req.method === "POST" && pathname === "/logs") {
+      readJsonBody(req, res, (payload) => {
+        try {
+          const count = insertLogs(payload);
+          respondJson(res, 200, { ok: true, inserted: count });
+        } catch (err) {
+          respondJson(res, 400, { ok: false, error: String(err) });
+        }
+      });
+      return;
+    }
+
+    // Query Recent Logs
+    if (req.method === "GET" && (pathname === "/logs/recent" || pathname === "/logs")) {
+      const app = url.searchParams.get("app") || undefined;
+      const level = url.searchParams.get("level") || undefined;
+      const minutes = Number(url.searchParams.get("minutes")) || 60;
+      const limit = Number(url.searchParams.get("limit")) || 100;
+      try {
+        const rows = queryRecentLogs({ app, level, minutes, limit });
+        respondJson(res, 200, { ok: true, logs: rows });
+      } catch (err) {
+        respondJson(res, 500, { ok: false, error: String(err) });
+      }
+      return;
+    }
+
+    // Grouped Error Logs
+    if (req.method === "GET" && pathname === "/logs/groups") {
+      try {
+        const groups = queryLogGroups({ limit: Number(url.searchParams.get("limit")) || 20 });
+        respondJson(res, 200, { ok: true, groups });
+      } catch (err) {
+        respondJson(res, 500, { ok: false, error: String(err) });
+      }
+      return;
+    }
+
+    // Trace Logs by Request ID
+    if (req.method === "GET" && pathname === "/logs/trace") {
+      const reqId = url.searchParams.get("request_id");
+      if (!reqId) {
+        respondJson(res, 400, { ok: false, error: "Missing request_id" });
+        return;
+      }
+      try {
+        const trace = queryLogTrace(reqId);
+        respondJson(res, 200, { ok: true, trace });
+      } catch (err) {
+        respondJson(res, 500, { ok: false, error: String(err) });
+      }
+      return;
+    }
+
+    // GitHub Context endpoint (push/pull catalog from dashboard)
+    if (pathname === "/api/github/context") {
+      if (req.method === "POST") {
+        readJsonBody(req, res, (payload) => {
+          writeGitHubContext(payload);
+          respondJson(res, 200, { ok: true });
+        });
+        return;
+      }
+      if (req.method === "GET") {
+        const ctx = readGitHubContext();
+        respondJson(res, 200, { ok: true, context: ctx });
+        return;
+      }
+    }
+
+    // Commands endpoint
+    if (pathname === "/commands/pending" && req.method === "GET") {
+      const app = url.searchParams.get("app") || undefined;
+      respondJson(res, 200, getPendingCommands(app));
+      return;
+    }
+
+    if (pathname === "/commands" && req.method === "POST") {
+      readJsonBody(req, res, (body) => {
+        const result = insertCommand(body);
+        respondJson(res, 200, result);
+      });
+      return;
+    }
+
+    if (pathname.startsWith("/commands/") && req.method === "PATCH") {
+      const id = pathname.slice("/commands/".length);
+      readJsonBody(req, res, (body) => {
+        updateCommand(id, body.status || "completed", body.result);
+        respondJson(res, 200, { ok: true });
+      });
+      return;
+    }
+
+    respondJson(res, 404, { ok: false, error: "Not found" });
+  });
+
+  server.on("error", (err) => {
+    if (err.code === "EADDRINUSE") {
+      console.error(`[Companion] Port ${PORT} already in use. MCP stdio mode continues running.`);
+    } else {
+      console.error("[Companion] Server error:", err);
+    }
+  });
+
+  server.listen(PORT, HOST, () => {
+    console.error(`[Companion] HTTP receiver listening on http://${HOST}:${PORT}${config.lan ? " (LAN mode)" : ""}`);
+  });
+}
+
+function readJsonBody(req, res, callback) {
+  let body = "";
+  let size = 0;
+  let tooBig = false;
+
+  req.on("data", (chunk) => {
+    size += chunk.length;
+    if (size > MAX_BODY_BYTES) {
+      tooBig = true;
+      req.destroy();
+      return;
+    }
+    body += chunk;
+  });
+
+  req.on("close", () => {
+    if (tooBig && !res.headersSent) {
+      respondJson(res, 413, { ok: false, error: "Payload too large" });
+    }
+  });
+
+  req.on("end", () => {
+    try {
+      const parsed = body ? JSON.parse(body) : {};
+      callback(parsed);
+    } catch (err) {
+      respondJson(res, 400, { ok: false, error: "Invalid JSON: " + err.message });
+    }
+  });
+}
+
+function respondJson(res, status, obj) {
+  res.writeHead(status, { "Content-Type": "application/json" });
+  res.end(JSON.stringify(obj));
+}
+
+// ===========================================================================
+// Job 2: MCP Server over stdio (Coding Agents: Claude Code, Cursor, Antigravity)
+// ===========================================================================
+function startMcpServer() {
+  const server = new McpServer({
+    name: "developer-companion-mcp",
+    version: "1.0.0",
+  });
+
+  // Tool 1: get_latest_sketch
+  server.tool(
+    "get_latest_sketch",
+    "Returns the most recently drawn UI wireframe sketch from the Developer Companion " +
+      "canvas: includes a JSON description of components, labels, and coordinates, " +
+      "plus a high-resolution PNG preview image. Use this whenever the user asks to implement, " +
+      "review, or inspect a UI design, wireframe, or sketch.",
+    {},
+    async () => {
+      const sketch = readSketch();
+      if (!sketch) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: "No sketch has been exported yet. Open the Developer Companion canvas in Chrome and click 'Send to project'.",
+            },
+          ],
+        };
+      }
+      const content = [{ type: "text", text: JSON.stringify(sketch.json, null, 2) }];
+      if (sketch.pngBase64) {
+        content.push({ type: "image", data: sketch.pngBase64, mimeType: "image/png" });
+      }
+      return { content };
+    }
+  );
+
+  // Tool 2: get_browser_logs
+  server.tool(
+    "get_browser_logs",
+    "Retrieves captured browser logs, console errors, uncaught exceptions, and failed HTTP network " +
+      "requests (4xx/5xx) captured from the user's active browser tabs and development servers. " +
+      "Call this when debugging front-end errors, API failures, or diagnosing UI issues.",
+    {
+      app: z.string().optional().describe("Filter by application label or domain (e.g. 'localhost', 'my-app')"),
+      level: z.string().optional().describe("Filter by log level: 'error', 'warn', 'info'"),
+      minutes: z.number().optional().describe("Retrieve logs from the past N minutes (default: 60)"),
+      limit: z.number().optional().describe("Maximum number of log rows to return (default: 50)"),
+    },
+    async ({ app, level, minutes = 60, limit = 50 }) => {
+      const rows = queryRecentLogs({ app, level, minutes, limit });
+      if (rows.length === 0) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `No browser logs found in the past ${minutes} minutes${app ? ` for app '${app}'` : ""}${level ? ` with level '${level}'` : ""}. Ensure the Developer Companion extension is capturing tabs.`,
+            },
+          ],
+        };
+      }
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(rows, null, 2),
+          },
+        ],
+      };
+    }
+  );
+
+  // Tool 3: get_github_repos
+  server.tool(
+    "get_github_repos",
+    "Retrieves GitHub repository metadata, catalog, and AI-generated summaries cached " +
+      "by the Developer Companion GitHub Dashboard. Call this when researching the user's " +
+      "repositories, projects, star counts, or topics.",
+    {
+      search: z.string().optional().describe("Keyword search across repo names and descriptions"),
+    },
+    async ({ search }) => {
+      const context = readGitHubContext();
+      if (!context) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: "No GitHub repository catalog cached yet. Open the GitHub Dashboard in the Developer Companion canvas to sync repos.",
+            },
+          ],
+        };
+      }
+
+      let repos = Array.isArray(context) ? context : context.repos || [];
+      if (search) {
+        const q = search.toLowerCase();
+        repos = repos.filter(
+          (r) =>
+            r.name?.toLowerCase().includes(q) ||
+            r.description?.toLowerCase().includes(q) ||
+            r.summary?.toLowerCase().includes(q)
+        );
+      }
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(repos.slice(0, 30), null, 2),
+          },
+        ],
+      };
+    }
+  );
+
+  // Tool 4: send_browser_command
+  server.tool(
+    "send_browser_command",
+    "Sends an automated command or evaluation to the user's active browser via Developer Companion " +
+      "(e.g., 'reload', 'localstorage_snapshot', or custom command).",
+    {
+      command: z.string().describe("The command name: 'reload', 'localstorage_snapshot', etc."),
+      app_name: z.string().optional().describe("Target application/domain label"),
+      payload: z.record(z.any()).optional().describe("Command payload parameters"),
+    },
+    async ({ command, app_name, payload }) => {
+      const res = insertCommand({ app_name, command, payload });
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Command queued (ID: ${res.id}). It will be executed on the browser's next poll cycle.`,
+          },
+        ],
+      };
+    }
+  );
+
+  // Tool 5: get_companion_status
+  server.tool(
+    "get_companion_status",
+    "Returns an overview of the Developer Companion state: sketch status, total logs captured, " +
+      "recent errors, and GitHub sync status.",
+    {},
+    async () => {
+      const stats = getSummaryStats();
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(stats, null, 2),
+          },
+        ],
+      };
+    }
+  );
+
+  const transport = new StdioServerTransport();
+  server.connect(transport).catch((err) => {
+    console.error("[Companion] MCP stdio transport connection notice:", err.message || err);
+  });
+}

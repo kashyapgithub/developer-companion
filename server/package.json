@@ -1,0 +1,16 @@
+{
+  "name": "developer-companion-server",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Unified MCP Server and local HTTP bridge for Developer Companion (UI Sketch Canvas, GitHub Dashboard, and Browser Log Streamer)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "setup": "node setup.js",
+    "uninstall-setup": "node uninstall.js",
+    "query": "node query_logs.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4"
+  }
+}

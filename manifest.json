@@ -1,0 +1,55 @@
+{
+  "manifest_version": 3,
+  "name": "Developer Companion",
+  "version": "1.0.0",
+  "description": "All-in-one developer companion: UI Sketch Canvas, GitHub Repo Dashboard, and Browser Log Streamer with unified MCP Agent bridge.",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    },
+    "default_title": "Open Developer Companion"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "permissions": [
+    "storage",
+    "downloads",
+    "debugger",
+    "tabs",
+    "alarms"
+  ],
+  "host_permissions": [
+    "http://localhost:*/*",
+    "http://127.0.0.1:*/*",
+    "https://api.github.com/*",
+    "https://api.openai.com/*",
+    "https://api.anthropic.com/*",
+    "https://generativelanguage.googleapis.com/*",
+    "https://openrouter.ai/*"
+  ],
+  "optional_host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
+  "options_page": "logs/options.html",
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "overlay/*",
+        "logs/*",
+        "editor/*",
+        "icons/*"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
