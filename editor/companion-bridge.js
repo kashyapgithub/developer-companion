@@ -45,10 +45,12 @@ export function initCompanionBridge() {
   // --- GitHub Modal -------------------------------------------------------
   function openGithubModal() {
     githubModal?.classList.remove("hidden");
+    document.body.style.overflow = "hidden";
   }
 
   function closeGithubModal() {
     githubModal?.classList.add("hidden");
+    document.body.style.overflow = "";
   }
 
   githubBtn?.addEventListener("click", () => {
@@ -92,11 +94,13 @@ export function initCompanionBridge() {
   // --- Logs Viewer Modal --------------------------------------------------
   function openLogsModal() {
     logsModal?.classList.remove("hidden");
+    document.body.style.overflow = "hidden";
     refreshLogsView();
   }
 
   function closeLogsModal() {
     logsModal?.classList.add("hidden");
+    document.body.style.overflow = "";
   }
 
   viewLogsBtn?.addEventListener("click", openLogsModal);

@@ -122,10 +122,13 @@ body {
 #app {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  max-height: 100vh;
+  width: 100%;
+  height: 100%;
+  max-height: 100%;
+  min-height: 0;
   overflow: hidden;
   background: var(--apple-bg);
+  position: relative;
 }
 
 :focus-visible {
@@ -768,28 +771,31 @@ body {
 
 .main-area {
   display: flex;
-  flex: 1;
+  flex: 1 1 0;
+  min-height: 0;
   overflow: hidden;
   position: relative;
   background: var(--apple-bg);
 }
 
 .content-panel {
-  flex: 1;
+  flex: 1 1 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   min-width: 0;
+  min-height: 0;
   border-right: 1px solid var(--apple-border);
 }
 
 .repo-list-view,
 .repo-grid-view {
-  flex: 1;
+  flex: 1 1 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   min-width: 0;
+  min-height: 0;
 }
 
 .repo-view--hidden {
@@ -797,10 +803,11 @@ body {
 }
 
 .repo-list-panel {
-  flex: 1;
+  flex: 1 1 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  min-height: 0;
   background: var(--apple-bg);
 }
 
@@ -822,8 +829,10 @@ body {
 }
 
 .repo-list-wrapper {
-  flex: 1;
+  flex: 1 1 0;
+  min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 6px 8px;
 }
 
@@ -1043,8 +1052,10 @@ body {
    ========================================================================== */
 
 .repo-grid-wrapper {
-  flex: 1;
+  flex: 1 1 0;
+  min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 18px 24px 36px;
   display: flex;
   flex-direction: column;
@@ -1519,10 +1530,14 @@ body {
 .detail-panel {
   width: 440px;
   max-width: 45%;
+  height: 100%;
+  max-height: 100%;
+  min-height: 0;
   background: var(--apple-glass-heavy);
   backdrop-filter: blur(28px) saturate(180%);
   -webkit-backdrop-filter: blur(28px) saturate(180%);
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 20px;
   display: flex;
   flex-direction: column;
@@ -2210,6 +2225,9 @@ body {
 .modal {
   width: 90%;
   max-width: 500px;
+  max-height: calc(100% - 32px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
   background: #18191d;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: var(--radius-lg);
@@ -2534,7 +2552,12 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex: 1 1 0;
   height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 20px;
 }
 
 /* Loading & Empty States */
@@ -2692,7 +2715,7 @@ body {
 .commits-modal {
   width: 92%;
   max-width: 720px;
-  height: 82vh;
+  height: min(82vh, 90%);
   max-height: 820px;
   background: #141519;
   border: 1px solid rgba(255, 255, 255, 0.13);
@@ -3241,6 +3264,7 @@ body {
   position: relative;
   z-index: 10;
   min-height: 44px;
+  flex-shrink: 0;
 }
 
 .folder-bar-inner {
@@ -3782,7 +3806,7 @@ body {
 .trending-modal {
   width: 94%;
   max-width: 860px;
-  height: 86vh;
+  height: min(86vh, 90%);
   max-height: 880px;
   background: #131418;
   border: 1px solid rgba(255, 255, 255, 0.12);

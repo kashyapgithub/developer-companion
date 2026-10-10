@@ -827,8 +827,8 @@ function runDashboard(shell, repos, settings, uiPrefs, { folders = [], repoFolde
     currentGroupBy = groupBy;
     currentViewMode = viewMode;
 
-    const savedListScroll = shell.listView?.scrollTop ?? 0;
-    const savedGridScroll = shell.gridView?.scrollTop ?? 0;
+    const savedListScroll = shell.list?.scrollTop ?? 0;
+    const savedGridScroll = shell.grid?.scrollTop ?? 0;
 
     if (viewMode === 'list') {
       shell.listView.classList.remove('repo-view--hidden');
@@ -855,8 +855,8 @@ function runDashboard(shell, repos, settings, uiPrefs, { folders = [], repoFolde
           }
         }
       }
-      if (preserveScroll && shell.listView) {
-        shell.listView.scrollTop = savedListScroll;
+      if (preserveScroll && shell.list) {
+        shell.list.scrollTop = savedListScroll;
       }
     } else {
       shell.gridView.classList.remove('repo-view--hidden');
@@ -889,8 +889,8 @@ function runDashboard(shell, repos, settings, uiPrefs, { folders = [], repoFolde
           shell.grid.appendChild(gridEl);
         }
       }
-      if (preserveScroll && shell.gridView) {
-        shell.gridView.scrollTop = savedGridScroll;
+      if (preserveScroll && shell.grid) {
+        shell.grid.scrollTop = savedGridScroll;
       }
     }
 
