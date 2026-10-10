@@ -78,18 +78,66 @@ export function wireImageImport({ canvasWrapEl, canvasEl, controller, viewport, 
     }
   }
 
+  /** Brings the canvas tab and window back into focus when capturing finishes or cancels. */
+  async function refocusCanvas() {
+    try { window.focus(); } catch {}
+    if (typeof chrome !== "undefined") {
+      if (chrome.tabs?.getCurrent) {
+        try {
+          chrome.tabs.getCurrent((tab) => {
+            if (tab?.id) {
+              chrome.tabs.update(tab.id, { active: true }).catch(() => {});
+              if (tab.windowId && chrome.windows?.update) {
+                chrome.windows.update(tab.windowId, { focused: true }).catch(() => {});
+              }
+            }
+          });
+        } catch {}
+      }
+      if (chrome.runtime?.sendMessage) {
+        try {
+          await chrome.runtime.sendMessage({ type: "FOCUS_CANVAS_TAB" });
+        } catch {}
+      }
+    }
+    setTimeout(() => {
+      try { window.focus(); } catch {}
+      if (typeof chrome !== "undefined" && chrome.runtime?.sendMessage) {
+        chrome.runtime.sendMessage({ type: "FOCUS_CANVAS_TAB" }).catch(() => {});
+      }
+    }, 120);
+  }
+
   /** Button route: pick a screen / window / tab and grab one frame of it. Returns "added" | "cancelled" | "unsupported". */
   async function captureScreen() {
     if (!navigator.mediaDevices?.getDisplayMedia) return "unsupported";
     let stream;
-    try { stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false }); }
-    catch { return "cancelled"; } // user closed the picker
+    let captureController;
+    if (typeof CaptureController !== "undefined") {
+      try { captureController = new CaptureController(); } catch {}
+    }
+
+    try {
+      const options = { video: true, audio: false, preferCurrentTab: false };
+      if (captureController) {
+        options.controller = captureController;
+      }
+      stream = await navigator.mediaDevices.getDisplayMedia(options);
+      if (captureController) {
+        try { captureController.setFocusBehavior("no-focus-change"); } catch {}
+      }
+    } catch {
+      await refocusCanvas();
+      return "cancelled"; // user closed the picker
+    }
+
     try {
       const file = await grabFrame(stream);
       await importFiles([file], viewCentre());
       return "added";
     } finally {
       stream.getTracks().forEach(t => t.stop());
+      await refocusCanvas();
     }
   }
 

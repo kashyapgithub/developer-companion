@@ -220,6 +220,31 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     return true;
   }
 
+  if (message.type === "FOCUS_CANVAS_TAB") {
+    (async () => {
+      try {
+        const senderTabId = _sender?.tab?.id;
+        const senderWindowId = _sender?.tab?.windowId;
+        if (senderTabId) {
+          await chrome.tabs.update(senderTabId, { active: true });
+          if (senderWindowId) {
+            await chrome.windows.update(senderWindowId, { focused: true });
+          }
+        } else {
+          const tabs = await chrome.tabs.query({ url: CANVAS_URL + "*" });
+          if (tabs.length > 0 && tabs[0].id) {
+            await chrome.tabs.update(tabs[0].id, { active: true });
+            if (tabs[0].windowId) {
+              await chrome.windows.update(tabs[0].windowId, { focused: true });
+            }
+          }
+        }
+      } catch {}
+      sendResponse({ ok: true });
+    })();
+    return true;
+  }
+
   if (message.type === "OPEN_GITHUB_DASHBOARD") {
     openOrFocusDashboard().then(() => sendResponse({ ok: true }));
     return true;
