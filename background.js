@@ -18,6 +18,7 @@ import {
 } from "./lib/debugger-capture.js";
 import { logSender } from "./lib/log-sender.js";
 import { createCommandPoller } from "./lib/commands.js";
+import { captureForRecording, restoreRecording, startRecording, stopRecording, retrySend, addMarker, getRecordingState } from "./lib/recording.js";
 import { setHoverEnabled, isHoverEnabled, repairHoverRegistration } from "./lib/hover-manager.js";
 import { getForwardConfig, setForwardConfig, DEFAULT_FORWARD_CONFIG } from "./lib/forward-config.js";
 
@@ -141,6 +142,7 @@ function recordLocal(tabId, row) {
   }
   buffer.push(row);
   if (buffer.length > MAX_BUFFERED_ROWS) buffer.shift();
+  captureForRecording(tabId, tabAppNames.get(tabId), row); // no-op unless a recording is running
 }
 
 const onDebuggerEvent = createEventHandler({
@@ -200,12 +202,29 @@ function getAttachedAppNames() {
     .map(([, appName]) => appName);
 }
 
+/**
+ * Tabs that were already open on an allowlisted site when recording starts
+ * aren't attached yet (attaching normally happens on navigation). Attach them
+ * now so the recording sees their next click, not just the next page load.
+ */
+async function attachOpenAllowlistedTabs() {
+  const tabs = await chrome.tabs.query({ url: ["http://*/*", "https://*/*"] });
+  for (const tab of tabs) {
+    const appName = await getAppNameForUrl(tab.url);
+    if (!appName) continue;
+    tabAppNames.set(tab.id, appName);
+    if (!tabSessions.has(tab.id)) tabSessions.set(tab.id, `${tab.id}-${Date.now()}`);
+    if (!isAttached(tab.id)) await attachDebugger(tab.id).catch(() => {});
+  }
+}
+
 const pollAndExecuteCommands = createCommandPoller({
   findTabIdByHostname: findTabIdByAppName,
   getAttachedHostnames: getAttachedAppNames,
 });
 
 repairHoverRegistration().catch(() => {});
+restoreRecording().catch(() => {});
 
 chrome.alarms.create("poll-commands", { periodInMinutes: 0.5 });
 chrome.alarms.onAlarm.addListener((alarm) => {
@@ -256,6 +275,31 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
   if (message.type === "HOVER_STATUS") {
     isHoverEnabled().then((enabled) => sendResponse({ enabled }));
+    return true;
+  }
+
+  // Recording: Record -> test your app -> Stop & send (see lib/recording.js).
+  if (message.type === "REC_START") {
+    (async () => {
+      await attachOpenAllowlistedTabs();
+      sendResponse(await startRecording(getAttachedAppNames()));
+    })();
+    return true;
+  }
+  if (message.type === "REC_STOP") {
+    stopRecording({ send: message.send !== false }).then(sendResponse);
+    return true;
+  }
+  if (message.type === "REC_RETRY") {
+    retrySend().then(sendResponse);
+    return true;
+  }
+  if (message.type === "REC_MARK") {
+    addMarker(message.note).then(sendResponse);
+    return true;
+  }
+  if (message.type === "REC_STATUS") {
+    sendResponse({ state: getRecordingState(), attachedApps: getAttachedAppNames() });
     return true;
   }
 

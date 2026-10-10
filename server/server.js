@@ -24,6 +24,9 @@ import {
   getPendingCommands,
   updateCommand,
   getSummaryStats,
+  latestRecordingId,
+  summarizeRecording,
+  queryRecording,
 } from "./storage.js";
 import { readConfig, codeMatches } from "./config.js";
 import { isOriginAllowed, isHostAllowed, applyCors } from "./guard.js";
@@ -319,6 +322,29 @@ function startMcpServer() {
           },
         ],
       };
+    }
+  );
+
+  // Tool 2b: get_latest_recording
+  server.tool(
+    "get_latest_recording",
+    "Returns the browser session the user just RECORDED while testing their app: a summary " +
+      "(duration, error counts, grouped top errors, markers the user dropped where something went wrong) " +
+      "plus the log rows in time order. Call this when the user says they recorded a session, " +
+      "reproduced a bug, or asks you to look at what happened while they were testing.",
+    {
+      session: z.string().optional().describe("A specific recording id (default: the newest)"),
+      verbosity: z.enum(["problems", "all"]).optional().describe("'problems' = errors, warnings and markers (default); 'all' includes every request and console line"),
+      limit: z.number().optional().describe("Max rows to return (default 200)"),
+    },
+    async ({ session, verbosity = "problems", limit = 200 }) => {
+      const id = session || latestRecordingId();
+      const summary = id ? summarizeRecording(id) : null;
+      if (!summary) {
+        return { content: [{ type: "text", text: "No recording found. Ask the user to press Record in Developer Companion, reproduce the problem, then Stop & send." }] };
+      }
+      const rows = queryRecording(id, { verbosity, limit });
+      return { content: [{ type: "text", text: JSON.stringify({ summary, shown: rows.length, verbosity, rows }, null, 2) }] };
     }
   );
 

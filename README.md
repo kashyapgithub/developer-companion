@@ -92,8 +92,16 @@ Click **Hover over tabs** in the top bar and Chrome asks once for permission to 
 
 Your canvas is saved automatically and shared between tabs, so it follows you as you switch. A few sites with a strict Content-Security-Policy may refuse the floating editor; the full-tab editor always works.
 
-### Send browser logs
-While you test on `localhost`, the extension watches console output, uncaught exceptions and failed requests. Click **Send logs** to hand them to your agent (`get_browser_logs`), or open the log viewer next to it to read them yourself. Add more sites in the extension's settings page.
+### Record a session and send it to your agent
+Testing your app and something breaks? Press **Record logs** in the top bar, reproduce the problem, then press **Stop & send**.
+
+- A live timer and counters (`2 errors · 1 failed request`) show what's being captured. With **Hover over tabs** on, the page bubble turns red and shows the same timer, so you can stay on your app.
+- The flag button drops a marker ("the button did nothing here") into the timeline.
+- Recording captures everything: console output, exceptions, and every network request and response, not just errors.
+- On stop, the whole session goes to your agent in one piece. Ask it to *"check the latest recording"* (`get_latest_recording`): it gets a summary with repeated errors grouped, your markers, and the log lines in time order.
+- If the agent server isn't running when you stop, the recording is kept and a **Retry** button appears.
+
+Only sites in your allowlist are recorded (`localhost` and `127.0.0.1` by default; add more in the extension's settings page). **Send logs** still sends whatever was captured recently, without a recording. The log viewer next to it lets you read the logs yourself.
 
 ### GitHub dashboard
 Click **GitHub** to browse your repositories with language filters, search, tags, folders and AI summaries (bring your own provider key). Pop it out into its own window if you like. The catalog is shared with your agent through `get_github_repos`.
@@ -105,7 +113,8 @@ Click **GitHub** to browse your repositories with language filters, search, tags
 | Tool | Use |
 | :--- | :--- |
 | `get_latest_sketch` | The sketch you just drew: shapes, layers, labels, coordinates, and a PNG preview. |
-| `get_browser_logs` | Recent console errors and failed network calls. |
+| `get_latest_recording` | The session you just recorded: summary, grouped errors, markers, and timeline. |
+| `get_browser_logs` | Recent console errors and failed network calls, without a recording. |
 | `get_github_repos` | Your repository catalog with tags and summaries. |
 | `send_browser_command` | Ask the browser to flush logs, attach to a tab, or report status. |
 | `get_companion_status` | Server health and how much is stored. |

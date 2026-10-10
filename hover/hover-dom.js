@@ -49,6 +49,15 @@
       touch-action: none;
     }
     .bubble:hover { transform: scale(1.06); }
+    /* Recording: red ring that pulses, with the elapsed time under the bubble. */
+    .bubble.rec { border-color: #e5645a; animation: ring 1.4s ease-in-out infinite; }
+    @keyframes ring { 0%, 100% { box-shadow: 0 0 0 0 rgba(229,100,90,.6), 0 6px 20px rgba(15,20,40,.4); } 50% { box-shadow: 0 0 0 9px rgba(229,100,90,0), 0 6px 20px rgba(15,20,40,.4); } }
+    .bubble-time {
+      position: absolute; left: 50%; bottom: -22px; transform: translateX(-50%);
+      padding: 1px 7px; border-radius: 9px; background: #e5645a; color: #fff;
+      font: 600 11px/16px system-ui, sans-serif; font-variant-numeric: tabular-nums; white-space: nowrap; pointer-events: none;
+    }
+    @media (prefers-reduced-motion: reduce) { .bubble.rec { animation: none; } }
     /* While dragging/resizing, the iframe must not swallow pointer events. */
     .dragging iframe { pointer-events: none; }
     .hidden { display: none !important; }
@@ -73,14 +82,14 @@
           <div class="slot"></div>
           <div class="grip" title="Resize"></div>
         </div>
-        <div class="bubble hidden" title="Open Developer Companion" style="background-image:url('${ICON_URL}')"></div>
+        <div class="bubble hidden" title="Open Developer Companion" style="background-image:url('${ICON_URL}')"><span class="bubble-time hidden"></span></div>
       </div>`;
     const $ = (sel) => root.querySelector(sel);
     return {
       host, root,
       rootEl: $("#root"),
       panel: $(".panel"), header: $(".header"), slot: $(".slot"), grip: $(".grip"),
-      bubble: $(".bubble"),
+      bubble: $(".bubble"), bubbleTime: $(".bubble-time"),
     };
   }
 

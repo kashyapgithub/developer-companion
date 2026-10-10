@@ -16,7 +16,7 @@
   self.__dcHoverLoaded = true;
 
   const ns = self.__dcHover;
-  const { STATE_KEY, EDITOR_URL, BUBBLE } = ns.config;
+  const { STATE_KEY, RECORDING_KEY, EDITOR_URL } = ns.config;
   const { clampRect, normalize, loadState, saveState } = ns.state;
   const { makeDraggable, makeResizable } = ns.drag;
 
@@ -123,11 +123,32 @@
     });
   }
 
+  // ---- Recording indicator ----------------------------------------------
+
+  let recTick = null;
+
+  /** Red ring + mm:ss on the bubble while a log recording is running. */
+  function paintRecording(rec) {
+    clearInterval(recTick);
+    const active = !!rec?.active;
+    ui.bubble.classList.toggle("rec", active);
+    ui.bubbleTime.classList.toggle("hidden", !active);
+    if (!active) return;
+    const paint = () => {
+      const s = Math.max(0, Math.floor((Date.now() - Date.parse(rec.startedAt)) / 1000));
+      ui.bubbleTime.textContent = `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+    };
+    paint();
+    recTick = setInterval(paint, 500);
+  }
+
   // ---- Cross-tab sync + lifecycle ---------------------------------------
 
   /** When another tab moves/minimizes the window, follow it. */
   function onStorageChange(changes, area) {
-    if (area !== "local" || !changes[STATE_KEY] || busy) return;
+    if (area !== "local") return;
+    if (changes[RECORDING_KEY]) paintRecording(changes[RECORDING_KEY].newValue);
+    if (!changes[STATE_KEY] || busy) return;
     state = normalize(changes[STATE_KEY].newValue, innerWidth, innerHeight);
     render();
   }
@@ -138,6 +159,7 @@
 
   /** Removes the UI. `forget` also clears the double-injection guard (mode turned off). */
   function teardown(forget) {
+    clearInterval(recTick);
     chrome.storage.onChanged.removeListener(onStorageChange);
     chrome.runtime.onMessage.removeListener(onMessage);
     ui.host.remove();
@@ -157,6 +179,7 @@
     chrome.storage.onChanged.addListener(onStorageChange);
     chrome.runtime.onMessage.addListener(onMessage);
     render();
+    try { paintRecording((await chrome.storage.local.get(RECORDING_KEY))[RECORDING_KEY]); } catch { /* ignore */ }
   }
 
   boot();

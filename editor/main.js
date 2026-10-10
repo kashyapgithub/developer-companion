@@ -22,6 +22,7 @@ import { wireScreenshotMenu } from "./modules/screenshotMenu.js";
 import { wireHoverToggle } from "./modules/hoverToggle.js";
 import { createAutosave } from "./modules/autosave.js";
 import { wireSideTabs, wirePopover } from "./modules/sidePanel.js";
+import { wireRecorder } from "./modules/recorder.js";
 import { applyEmbeddedClass } from "./modules/embedMode.js";
 
 applyEmbeddedClass(); // before first paint, so the floating-window layout doesn't flash
@@ -116,6 +117,7 @@ autosave = createAutosave({ controller });
 autosave.restore();
 wireSideTabs(document.getElementById("side"));
 wirePopover({ buttonEl: document.getElementById("agent-settings-btn"), popoverEl: document.getElementById("agent-popover") });
+wireRecorder();
 wireHoverToggle({ buttonEl: document.getElementById("hover-mode-btn") });
 
 engine.scheduleRender(controller.state);

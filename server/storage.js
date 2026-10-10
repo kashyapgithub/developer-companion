@@ -247,6 +247,73 @@ export function queryLogTrace(requestId) {
   return rows.map(formatLogRow);
 }
 
+// ---------------------------------------------------------------------------
+// Recording sessions
+// A "recording" is a run of logs the extension captured between Record and
+// Stop. Every row carries the same session_id (always prefixed "rec-").
+// ---------------------------------------------------------------------------
+const REC_PREFIX = "rec-%";
+
+/** Newest recording's session id, or null if none has been sent yet. */
+export function latestRecordingId() {
+  const row = getDb().prepare(
+    "SELECT session_id FROM logs WHERE session_id LIKE ? ORDER BY id DESC LIMIT 1"
+  ).get(REC_PREFIX);
+  return row ? row.session_id : null;
+}
+
+/** Counts and timing for one recording — small enough to always show the agent. */
+export function summarizeRecording(sessionId) {
+  const db = getDb();
+  const span = db.prepare(
+    "SELECT COUNT(*) AS total, MIN(created_at) AS started, MAX(created_at) AS ended FROM logs WHERE session_id = ?"
+  ).get(sessionId);
+  if (!span || !span.total) return null;
+
+  const byLevel = Object.fromEntries(
+    db.prepare("SELECT level, COUNT(*) AS n FROM logs WHERE session_id = ? GROUP BY level").all(sessionId).map((r) => [r.level, r.n])
+  );
+  const byApp = Object.fromEntries(
+    db.prepare("SELECT app_name, COUNT(*) AS n FROM logs WHERE session_id = ? GROUP BY app_name").all(sessionId).map((r) => [r.app_name, r.n])
+  );
+  // The same error repeated 200 times is one problem, not 200: group by message.
+  const topErrors = db.prepare(`
+    SELECT message, error_type, COUNT(*) AS count, MIN(created_at) AS first_seen
+    FROM logs WHERE session_id = ? AND level IN ('error','fatal')
+    GROUP BY message, error_type ORDER BY count DESC, first_seen ASC LIMIT 10
+  `).all(sessionId);
+  const markers = db.prepare(
+    "SELECT created_at, message FROM logs WHERE session_id = ? AND tags LIKE '%\"marker\"%' ORDER BY id ASC"
+  ).all(sessionId);
+
+  return {
+    session_id: sessionId,
+    started: span.started,
+    ended: span.ended,
+    duration_seconds: Math.round((Date.parse(span.ended) - Date.parse(span.started)) / 1000),
+    total_events: span.total,
+    by_level: byLevel,
+    by_site: byApp,
+    top_errors: topErrors,
+    markers,
+  };
+}
+
+/**
+ * Rows of one recording, oldest first.
+ * verbosity "problems" = errors, warnings and markers only (what an agent
+ * usually needs); "all" = everything, including routine requests.
+ */
+export function queryRecording(sessionId, { verbosity = "problems", limit = 200 } = {}) {
+  const where = verbosity === "all"
+    ? "session_id = ?"
+    : "session_id = ? AND (level IN ('error','fatal','warn') OR tags LIKE '%\"marker\"%')";
+  const rows = getDb().prepare(
+    `SELECT * FROM logs WHERE ${where} ORDER BY id ASC LIMIT ?`
+  ).all(sessionId, Math.min(Number(limit) || 200, 2000));
+  return rows.map(formatLogRow);
+}
+
 function formatLogRow(r) {
   const row = { ...r };
   try { row.context = JSON.parse(row.context); } catch {}

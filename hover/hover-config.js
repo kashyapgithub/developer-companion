@@ -11,6 +11,8 @@
   ns.config = {
     /** chrome.storage.local key holding position / size / minimized flag. */
     STATE_KEY: "dcHoverState",
+    /** Written by the background recorder; the bubble mirrors it (red ring + timer). */
+    RECORDING_KEY: "dcRecording",
     /** The editor page shown inside the floating window. `embedded=1` lets it tune its UI. */
     EDITOR_URL: chrome.runtime.getURL("editor/editor.html?embedded=1"),
     ICON_URL: chrome.runtime.getURL("icons/icon48.png"),
