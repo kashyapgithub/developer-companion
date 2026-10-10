@@ -180,6 +180,12 @@ export function createToolController({ canvasEl, textInputEl, viewport, onChange
     state.undoRevision += 1;
     notify(); // prunes selectedIds that no longer exist
   }
+  /** Replaces the whole document (autosave restore / cross-tab sync). Becomes one undo step. */
+  function loadShapes(shapes) {
+    state.shapes = enforceHierarchy(shapes);
+    state.selectedIds = [];
+    commitHistory();
+  }
   const undoAction = () => restore(undo(history));
   const redoAction = () => restore(redo(history));
 
@@ -977,7 +983,7 @@ export function createToolController({ canvasEl, textInputEl, viewport, onChange
     setEffects: edits(setEffects),
     setSelectedRotation: edits(setSelectedRotation),
     addShape: (shape) => (state.readOnly && shape.type !== "comment" ? undefined : addShape(shape)),
-    clearAll: edits(clearAll),
+    clearAll: edits(clearAll), loadShapes,
     undoAction: edits(undoAction), redoAction: edits(redoAction),
     deleteSelected: edits(deleteSelected, { comments: true }),
     duplicateSelected: edits(duplicateSelected), copySelected, cutSelected: edits(cutSelected), pasteShapes,

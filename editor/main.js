@@ -19,6 +19,11 @@ import { createInspectPanel } from "./modules/inspect.js";
 import { buildCommands, createActionsPalette } from "./modules/actions.js";
 import { topHit } from "./modules/selection.js";
 import { wireScreenshotMenu } from "./modules/screenshotMenu.js";
+import { wireHoverToggle } from "./modules/hoverToggle.js";
+import { createAutosave } from "./modules/autosave.js";
+import { applyEmbeddedClass } from "./modules/embedMode.js";
+
+applyEmbeddedClass(); // before first paint, so the floating-window layout doesn't flash
 
 /**
  * Design <-> Dev mode. Dev mode is read-only (the controller refuses every edit),
@@ -46,6 +51,7 @@ let imageImport = null;
 let palette = null;
 let comments = null;
 let inspect = null;
+let autosave = null;
 
 const controller = createToolController({
   canvasEl,
@@ -59,6 +65,7 @@ const controller = createToolController({
     effectsPanel?.update(state);
     dock?.sync(state.currentTool);
     comments?.update(state);
+    autosave?.schedule();
     if (document.body.dataset.mode === "dev") inspect?.update(state);
   },
 });
@@ -102,6 +109,11 @@ dock = createDock({
   onOpenActions: () => palette.open(),
   onMode: (mode) => setMode(mode),
 });
+
+// Draft autosave + cross-tab sync (needed by the hover window), then the hover button.
+autosave = createAutosave({ controller });
+autosave.restore();
+wireHoverToggle({ buttonEl: document.getElementById("hover-mode-btn") });
 
 engine.scheduleRender(controller.state);
 layers.update(controller.state);

@@ -176,3 +176,15 @@ By default, it automatically captures `localhost` and `127.0.0.1`. You can add m
 ## License
 
 MIT License. Designed and built by [Kashyap](https://github.com/kashyapgithub).
+
+## Hover over tabs
+
+In the editor toolbar, click **Hover over tabs**. Chrome asks once for permission to show over web pages. After that, every http(s) tab gets a small floating bubble:
+
+- **Click** the bubble to open the editor in a floating window over the page.
+- **Drag** the header (or the bubble) to move it anywhere; drag the bottom-right corner to resize.
+- **—** minimizes back to the bubble, **↗** opens the full-tab editor, **✕** hides it on that page until reload.
+- Your canvas is autosaved and shared between tabs, so it follows you as you switch tabs.
+
+Click the button again to turn hover mode off. Code lives in `hover/` (content scripts) and `lib/hover-manager.js` (background).
+Note: a few sites with a strict Content-Security-Policy (`frame-src`) may refuse to show the floating editor.

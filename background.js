@@ -18,6 +18,7 @@ import {
 } from "./lib/debugger-capture.js";
 import { logSender } from "./lib/log-sender.js";
 import { createCommandPoller } from "./lib/commands.js";
+import { setHoverEnabled, isHoverEnabled, repairHoverRegistration } from "./lib/hover-manager.js";
 import { getForwardConfig, setForwardConfig, DEFAULT_FORWARD_CONFIG } from "./lib/forward-config.js";
 
 const CANVAS_URL = chrome.runtime.getURL("editor/editor.html");
@@ -204,6 +205,8 @@ const pollAndExecuteCommands = createCommandPoller({
   getAttachedHostnames: getAttachedAppNames,
 });
 
+repairHoverRegistration().catch(() => {});
+
 chrome.alarms.create("poll-commands", { periodInMinutes: 0.5 });
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === "poll-commands") pollAndExecuteCommands();
@@ -242,6 +245,17 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       } catch {}
       sendResponse({ ok: true });
     })();
+    return true;
+  }
+
+  // Hover mode: float the editor over any tab (see lib/hover-manager.js).
+  if (message.type === "HOVER_SET") {
+    setHoverEnabled(!!message.enabled).then(sendResponse);
+    return true;
+  }
+
+  if (message.type === "HOVER_STATUS") {
+    isHoverEnabled().then((enabled) => sendResponse({ enabled }));
     return true;
   }
 
