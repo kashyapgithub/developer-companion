@@ -26,6 +26,7 @@ import {
   getSummaryStats,
 } from "./storage.js";
 import { readConfig, codeMatches } from "./config.js";
+import { isOriginAllowed, isHostAllowed, applyCors } from "./guard.js";
 
 const PORT = Number(process.env.PORT) || Number(process.env.LOG_SERVER_PORT) || 5959;
 const MAX_BODY_BYTES = 60 * 1024 * 1024; // 60MB for large PNG wireframes
@@ -46,10 +47,15 @@ startMcpServer();
 // ===========================================================================
 function startHttpReceiver() {
   const server = http.createServer((req, res) => {
-    // Open CORS headers
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-Sketch-Token, X-Access-Token");
+    // Guard 1: CORS only for extension origins (never "*").
+    applyCors(req, res);
+
+    // Guard 2: refuse browser requests from untrusted web pages, and
+    // DNS-rebinding attempts (unexpected Host header).
+    if (!isOriginAllowed(req.headers.origin) || !isHostAllowed(req.headers.host, config.lan)) {
+      respondJson(res, 403, { ok: false, error: "Forbidden origin" });
+      return;
+    }
 
     if (req.method === "OPTIONS") {
       res.writeHead(204);
@@ -69,8 +75,14 @@ function startHttpReceiver() {
         lan: config.lan,
         authRequired: needsCode(req),
         authorized: isAuthorized(req),
-        stats: getSummaryStats(),
+        ...(isAuthorized(req) ? { stats: getSummaryStats() } : {}),
       });
+      return;
+    }
+
+    // Everything below needs the access code when the caller is remote (LAN mode).
+    if (!isAuthorized(req)) {
+      respondJson(res, 401, { ok: false, error: "Unauthorized — access code required" });
       return;
     }
 
