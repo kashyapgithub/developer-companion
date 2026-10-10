@@ -52,7 +52,7 @@ export function exportCatalogAsMarkdown(repos, arg2, arg3, arg4, arg5) {
       .filter(Boolean)
       .join(', ') || '—';
     const status = [
-      r.isPinned ? '📌' : '',
+      r.isPinned ? 'Pinned' : '',
       r.isPrivate ? 'Private' : 'Public',
       r.isFork ? (r.looksUntouched ? 'Untouched' : 'Fork') : 'Original',
     ].filter(Boolean).join(' · ');

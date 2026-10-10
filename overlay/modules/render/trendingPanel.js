@@ -1425,7 +1425,7 @@ export function renderTrendingPanel(
               data-repo-id="${repo.id}"
               title="${isPinned ? 'Unpin repository' : 'Pin repository to dashboard'}"
             >
-              <span class="pin-glyph">📌</span>
+              <span class="pin-glyph"><svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M4.5 1.5A.5.5 0 0 1 5 1h6a.5.5 0 0 1 .5.5V3h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5H11v3.5l1.5 2.5a.5.5 0 0 1-.43.75H8.5V15a.5.5 0 0 1-1 0v-3.25H4.43a.5.5 0 0 1-.43-.75L5.5 8.5V5H4.5a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h1V1.5z"/></svg></span>
               <span class="pin-text">${isPinned ? 'Pinned' : 'Pin'}</span>
             </button>
 

@@ -101,7 +101,7 @@ export function renderDetailPanel(
         </span>
         <span class="badge ${kindBadgeClass}">${kindLabel}</span>
         ${repo.archived ? '<span class="badge badge--archived">Archived</span>' : ''}
-        ${repo.isPinned ? '<span class="badge badge--pinned">📌 Pinned</span>' : ''}
+        ${repo.isPinned ? '<span class="badge badge--pinned">Pinned</span>' : ''}
         ${currentFolder ? `<span class="badge badge--folder" style="--folder-color: ${currentFolder.color || '#0071e3'}"><span class="folder-dot" style="background-color: ${currentFolder.color || '#0071e3'}"></span> ${escapeHtml(currentFolder.name)}</span>` : ''}
         ${repo.owner ? `<span class="detail-panel__owner-badge">by <strong>${escapeHtml(repo.owner)}</strong></span>` : ''}
       </div>

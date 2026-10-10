@@ -585,7 +585,7 @@ function runDashboard(shell, repos, settings, uiPrefs, { folders = [], repoFolde
         <button type="button" class="batch-btn" id="batch-btn-clear" title="Clear selection">Clear</button>
         <div class="batch-divider"></div>
         <button type="button" class="batch-btn" id="batch-btn-pin" title="${allSelectedPinned ? 'Unpin selected' : 'Pin selected'}" ${count === 0 ? 'disabled' : ''}>
-          📌 ${allSelectedPinned ? 'Unpin' : 'Pin'}
+          ${allSelectedPinned ? 'Unpin' : 'Pin'}
         </button>
         <div class="batch-select-wrap">
           <select class="batch-folder-select" id="batch-folder-select" ${count === 0 ? 'disabled' : ''}>
@@ -1243,7 +1243,7 @@ function groupRepositories(repoList, groupBy, folders = []) {
     if (unfiledPinned.length > 0) {
       res.push({
         id: 'folder-pinned-unfiled',
-        title: folders.length > 0 ? '📌 Pinned (Unfiled)' : '📌 Pinned Repositories',
+        title: folders.length > 0 ? 'Pinned (Unfiled)' : 'Pinned Repositories',
         repos: unfiledPinned,
       });
       unfiledPinned.forEach((r) => usedRepoIds.add(r.id));

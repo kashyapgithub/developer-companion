@@ -75,7 +75,7 @@ export function initCompanionBridge() {
       const res = await chrome.runtime.sendMessage({ type: "SEND_LOGS_TO_AGENT" });
       if (res?.ok) {
         const count = res.count || 0;
-        showToast(`✓ Sent ${count} log${count === 1 ? "" : "s"} to Agent Server`, "success");
+        showToast(`Sent ${count} log${count === 1 ? "" : "s"} to Agent Server`, "success");
       } else {
         showToast(res?.error ? `Failed: ${res.error}` : "Agent server unreachable (is it running on port 5959?)", "error");
       }
