@@ -142,9 +142,23 @@ export function createLayersPanel({ listEl, controller }) {
     const w = menuEl.offsetWidth, h = menuEl.offsetHeight;
     menuEl.style.left = `${Math.min(x, window.innerWidth - w - 8)}px`;
     menuEl.style.top = `${Math.min(y, window.innerHeight - h - 8)}px`;
+    // Close on an outside press or Escape. A press INSIDE the menu must not close it on
+    // pointerdown: removing the button then would swallow the click that follows.
     setTimeout(() => {
-      document.addEventListener("pointerdown", closeMenu, { once: true });
-      document.addEventListener("keydown", (ev) => { if (ev.key === "Escape") closeMenu(); }, { once: true });
+      const onPress = (ev) => {
+        if (menuEl && menuEl.contains(ev.target)) return;
+        closeMenu();
+        document.removeEventListener("pointerdown", onPress, true);
+        document.removeEventListener("keydown", onKey, true);
+      };
+      const onKey = (ev) => {
+        if (ev.key !== "Escape") return;
+        closeMenu();
+        document.removeEventListener("pointerdown", onPress, true);
+        document.removeEventListener("keydown", onKey, true);
+      };
+      document.addEventListener("pointerdown", onPress, true);
+      document.addEventListener("keydown", onKey, true);
     }, 0);
   }
 
