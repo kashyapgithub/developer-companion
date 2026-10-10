@@ -104,6 +104,9 @@ Add this to your MCP configuration:
 ### 1. UI Sketch Canvas (Main UI)
 - **Click the extension icon** in Chrome -> The canvas opens in a full tab.
 - Pick shapes, boxes, buttons, text, and connectors from the floating bottom dock.
+- **Add screenshot:** Use the "Add screenshot" toolbar button, press `Ctrl/Cmd+Shift+K`, or paste (`Ctrl/Cmd+V`) anywhere to place screenshots from clipboard, file upload, or browser screen capture.
+- **Figma-style layers panel:** Drag-and-drop layers to reorder above, below, or inside frames; collapse containers with arrows; multi-select with Shift+click; rename with F2; right-click any layer or canvas shape for arrange, group, and delete options.
+- **Delete shapes:** Use the Delete button in the toolbar, layer trash icon, right-click menu, or Delete / Backspace key.
 - When your sketch is ready, click **"Send to project"** in the top toolbar.
 - Your AI agent can now run `get_latest_sketch` to inspect your design and generate the matching frontend code.
 

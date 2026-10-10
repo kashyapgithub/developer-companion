@@ -25,7 +25,8 @@
     "downloads",
     "debugger",
     "tabs",
-    "alarms"
+    "alarms",
+    "clipboardRead"
   ],
   "host_permissions": [
     "http://localhost:*/*",
