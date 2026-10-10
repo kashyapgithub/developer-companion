@@ -1,111 +1,97 @@
 # Developer Companion 🛠️✨
 
-All-in-one developer companion combining **UI Sketch Canvas**, **GitHub Repository Dashboard**, and **Browser Log Streamer** into a single Chrome extension with a unified **Model Context Protocol (MCP)** and HTTP Agent Bridge.
+> **The ultimate bridge between your browser and AI coding agents.**  
+> Draw UI wireframes, search & summarize your GitHub repos, and stream browser console errors straight to Claude Code, Cursor, or Antigravity — all in **one single Chrome extension**.
 
 ---
 
-## 🌟 What is Developer Companion?
+## ⚡ 30-Second Summary
 
-Developer Companion unites three essential developer workflows into a single interface:
+Instead of juggling three separate tools and multiple servers, **Developer Companion** combines everything into **one extension and one unified background bridge**:
 
-1. **🎨 UI Sketch Canvas (Primary UI)**
-   - Full-tab interactive design canvas to draw wireframes, UI components, layouts, and annotations.
-   - One-click **"Send to project"** pushes wireframe JSON structure and rendered PNG preview straight to your AI coding agent via MCP.
-
-2. **🐙 GitHub Repo Dashboard**
-   - Accessible straight from the Canvas toolbar via the **"GitHub Dashboard"** button.
-   - Opens as an embedded in-canvas modal drawer or standalone window.
-   - Search, filter, tag, organize into folders, view recent commits, and generate AI summaries for all your GitHub repos.
-   - Automatically syncs repository catalog to your local AI agent.
-
-3. **📋 Browser Log Streamer & Diagnostics**
-   - Dedicated **"Send browser logs to agent"** button on the Canvas toolbar.
-   - Captures console output (`log`, `warn`, `error`), uncaught exceptions, and failed network calls (4xx/5xx) using Chrome DevTools Protocol (`chrome.debugger`).
-   - Integrated live logs viewer drawer with search, type filters, and one-click stream to the local agent server.
+| Feature | What it does | How it helps your AI Agent |
+| :--- | :--- | :--- |
+| 🎨 **UI Sketch Canvas** | Draw wireframes & UI designs in a full browser tab. | AI gets exact coordinates, labels, hierarchy + high-res PNG to code your UI accurately. |
+| 🐙 **GitHub Dashboard** | Access all your repositories with AI summaries & tags. | AI gets a real-time catalog of your projects, dependencies, and codebases. |
+| 📋 **Browser Logs to Agent** | One-click capture of console errors & network failures. | AI diagnoses frontend crashes and API bugs without you copy-pasting DevTools. |
 
 ---
 
-## ⚡ Unified Agent Communication Bridge
-
-Instead of multiple servers on different ports, Developer Companion features **one unified bridge** running locally on port `5959`:
+## 🎯 How It Works
 
 ```
-┌────────────────────────────────────────────────────────┐
-│               Developer Companion Extension            │
-│  (Canvas UI + GitHub Dashboard + CDP Browser Logger)  │
-└──────────────┬─────────────────────────┬───────────────┘
-               │ HTTP POST /save         │ HTTP POST /logs
-               ▼                         ▼
-┌────────────────────────────────────────────────────────┐
-│        Developer Companion Server (Node.js)            │
-│         Port: 5959  ·  SQLite Database: logs.db        │
-└──────────────────────────┬─────────────────────────────┘
-                           │ Model Context Protocol (stdio)
-                           ▼
-┌────────────────────────────────────────────────────────┐
-│       AI Coding Agents (Claude Code, Cursor, AGY)      │
-└────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────────────┐
+│                        DEVELOPER COMPANION EXTENSION                   │
+│                                                                        │
+│   [ 🎨 Canvas Workspace ]    [ 🐙 GitHub Dashboard ]    [ 📋 Send Logs ] │
+└───────────────────────────────────┬────────────────────────────────────┘
+                                    │ Single connection to localhost:5959
+                                    ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│                    DEVELOPER COMPANION LOCAL BRIDGE                    │
+│                        Node.js  ·  SQLite Database                     │
+└───────────────────────────────────┬────────────────────────────────────┘
+                                    │ Model Context Protocol (stdio)
+                                    ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│               YOUR AI AGENT (Claude Code / Cursor / Windsurf)          │
+│       "I see your wireframe sketch and 2 browser console errors!"       │
+└────────────────────────────────────────────────────────────────────────┘
 ```
-
-### Unified MCP Tools:
-| Tool Name | Description |
-| :--- | :--- |
-| `get_latest_sketch` | Returns wireframe component coordinates, labels, hierarchy, and rendered PNG preview image. |
-| `get_browser_logs` | Returns recent console errors, exceptions, and failed HTTP requests with app/level filters. |
-| `get_github_repos` | Returns cached repository catalog, stars, language, and AI descriptions from GitHub Dashboard. |
-| `send_browser_command` | Sends remote commands to the user's active browser tabs (e.g. reload, localstorage snapshot). |
-| `get_companion_status` | Overview of sketch, total captured logs, and sync status. |
 
 ---
 
-## 🚀 Quick Start
+## 🚀 3-Minute Quickstart
 
-### 1. Load the Chrome Extension
-1. Open Google Chrome and navigate to `chrome://extensions/`.
-2. Turn on **Developer mode** (top-right toggle).
+### Step 1: Load the Chrome Extension
+1. Open Google Chrome and go to `chrome://extensions/`.
+2. Turn on **Developer mode** (toggle in the top-right corner).
 3. Click **Load unpacked** (top-left).
-4. Select this project root directory (`developer-companion`).
-5. Click the extension icon in your Chrome toolbar — it immediately opens the full **UI Sketch Canvas** tab!
+4. Select this folder: `developer-companion`.
+5. 🎉 Click the **Developer Companion** icon in your Chrome toolbar to open the Canvas!
 
-### 2. Start the Agent Bridge Server
-Run the automated installer for your operating system:
+---
 
-- **macOS / Linux**: Double-click `Install-Mac-Linux.command` or run:
+### Step 2: Start the Local Agent Bridge
+The extension talks to a tiny, local server on your computer that saves your sketches and logs.
+
+- **Mac / Linux**: Double-click `Install-Mac-Linux.command` or run:
   ```bash
   cd server
   npm install
-  node setup.js
+  npm start
   ```
 - **Windows**: Double-click `Install-Windows.bat`
 
-Or run manually anytime:
+*The server will start at `http://127.0.0.1:5959` and create a local SQLite database for your logs.*
+
+---
+
+### Step 3: Connect to Your AI Coding Agent
+
+#### Option A: Claude Code
+Run this command in your terminal:
 ```bash
-node server/server.js
+claude mcp add developer-companion node /absolute/path/to/developer-companion/server/server.js
 ```
-The server will start on `http://127.0.0.1:5959` and initialize SQLite storage for logs and sketches.
+*(Or add it to your `~/.claude/mcp.json` file)*
 
-### 3. Connect to Your AI Coding Agent
+#### Option B: Cursor IDE
+1. Open **Cursor Settings** (`Cmd+,` or `Ctrl+,`).
+2. Go to **Features** → **MCP** → **+ Add New MCP Server**.
+3. Fill in:
+   - **Name**: `developer-companion`
+   - **Type**: `command`
+   - **Command**: `node /absolute/path/to/developer-companion/server/server.js`
 
-#### Claude Code:
-Add to `~/.claude/mcp.json` or run:
-```bash
-claude mcp add developer-companion node /path/to/developer-companion/server/server.js
-```
-
-#### Cursor:
-Go to **Cursor Settings** -> **Features** -> **MCP** -> **+ Add New MCP Server**:
-- **Name**: `developer-companion`
-- **Type**: `command`
-- **Command**: `node /path/to/developer-companion/server/server.js`
-
-#### Antigravity / Gemini CLI:
-Add to your MCP configuration:
+#### Option C: Antigravity / Gemini CLI
+Add this to your MCP configuration:
 ```json
 {
   "mcpServers": {
     "developer-companion": {
       "command": "node",
-      "args": ["/path/to/developer-companion/server/server.js"]
+      "args": ["/absolute/path/to/developer-companion/server/server.js"]
     }
   }
 }
@@ -113,69 +99,74 @@ Add to your MCP configuration:
 
 ---
 
-## 🖥️ Command-Line Log Querying
+## 💡 How to Use the 3 Tools
 
-You can inspect captured browser logs right from your terminal anytime:
+### 1. 🎨 UI Sketch Canvas (Main UI)
+- **Click the extension icon** in Chrome → The canvas opens in a full tab.
+- Pick shapes, boxes, buttons, text, and connectors from the floating bottom dock.
+- When your sketch is ready, click **"Send to project"** in the top toolbar.
+- Your AI agent can now run `get_latest_sketch` to inspect your design and generate the matching frontend code!
 
-```bash
-# Query recent logs from the past 60 minutes
-node server/query_logs.js recent
+### 2. 🐙 GitHub Repo Dashboard
+- Inside the canvas, click the **"GitHub Dashboard"** button in the top toolbar.
+- A clean modal pops up showing all your public, private, and forked repos.
+- Filter by language, search by keyword, view commit history, or let AI generate repo summaries.
+- Clicking **"↗ Pop out"** opens the dashboard in its own standalone floating window.
+- The repo catalog is automatically shared with your local agent!
 
-# Filter by application and level
-node server/query_logs.js recent --app localhost --level error
-
-# Inspect grouped errors and fingerprints
-node server/query_logs.js groups
-
-# Inspect companion stats
-node server/query_logs.js status
-```
-
-*(Python users can also use `python3 server/query_logs.py recent` — both run against the same SQLite database!)*
+### 3. 📋 Send Browser Logs to Agent
+- Whenever you test your web app on `localhost`:
+  - The extension automatically monitors console logs, uncaught exceptions, and failed 4xx/5xx network calls.
+- Just click **"Send browser logs to agent"** on the toolbar!
+- An instant toast confirms: `✓ Sent 14 logs to Agent Server`.
+- Your agent can now run `get_browser_logs` to immediately find the bug and write the fix!
+- Want to view the logs yourself? Click the icon next to the button to open the **Live Logs Drawer**.
 
 ---
 
-## 📁 Repository Structure
+## 🛠️ MCP Tools Reference (What Your Agent Can Do)
 
+Your AI agent automatically gets access to these 5 tools:
+
+| MCP Tool | What the Agent Can Ask For |
+| :--- | :--- |
+| `get_latest_sketch` | "Show me the UI sketch the user just drew on canvas." |
+| `get_browser_logs` | "Get recent JavaScript errors and failed network calls from localhost." |
+| `get_github_repos` | "List the user's GitHub repositories and their AI descriptions." |
+| `send_browser_command` | "Tell the browser to reload or capture local storage." |
+| `get_companion_status` | "Check if the server is healthy and how many logs are stored." |
+
+---
+
+## 💻 Terminal Commands
+
+You can also view your logs directly in your terminal:
+
+```bash
+# View recent browser logs
+node server/query_logs.js recent
+
+# View only error logs from localhost
+node server/query_logs.js recent --app localhost --level error
+
+# View grouped errors and how many times they happened
+node server/query_logs.js groups
 ```
-developer-companion/
-├── manifest.json              # Chrome Manifest V3
-├── background.js              # Unified service worker (CDP capture & messaging)
-├── icons/                     # 16px, 48px, 128px icons
-├── editor/                    # UI Sketch Canvas (Primary UI)
-│   ├── editor.html            # Canvas HTML with Companion tools & modals
-│   ├── editor.css             # Styling with companion buttons & drawer panels
-│   ├── companion-bridge.js    # In-canvas GitHub modal & logs dispatch bridge
-│   ├── main.js                # Canvas engine bootstrap
-│   └── modules/               # Drawing tools, history, alignment, export, etc.
-├── overlay/                   # GitHub Repo Dashboard
-│   ├── overlay.html           # Standalone / iframe dashboard
-│   ├── overlay.css            # macOS-style dashboard UI
-│   ├── overlay.js             # Controller with auto-sync to companion agent
-│   └── modules/               # GitHub API, AI summaries, storage, export
-├── logs/                      # Browser logs viewer & options
-│   ├── logs.html              # Full log viewer page
-│   ├── logs.js                # Viewer logic
-│   ├── options.html           # Debugger allowlist settings
-│   └── options.js             # Allowlist settings controller
-├── lib/                       # Shared browser libraries
-│   ├── allowlist.js           # Domain allowlist (defaults to localhost)
-│   ├── debugger-capture.js    # CDP event listeners (Console, Log, Network)
-│   ├── log-sender.js          # Batched HTTP sender to port 5959
-│   ├── forward-config.js      # Forwarding preferences
-│   └── commands.js            # Browser remote commands execution
-├── server/                    # Unified MCP Server & HTTP Bridge
-│   ├── server.js              # Dual-mode MCP (stdio) + HTTP (5959) server
-│   ├── storage.js             # SQLite logs database & sketch file manager
-│   ├── config.js              # Config & LAN mode authorization
-│   ├── query_logs.js          # Node CLI log inspector
-│   ├── query_logs.py          # Python CLI log inspector (backward compatibility)
-│   ├── server.py              # Python server fallback
-│   └── setup.js               # Cross-platform login auto-start installer
-├── Install-Mac-Linux.command  # Quick installer script
-├── Install-Windows.bat        # Windows installer script
-└── README.md
-```
+
+*(Python users: `python3 server/query_logs.py recent` works identically!)*
+
+---
+
+## ❓ Frequently Asked Questions
+
+**Q: Do I need to start multiple servers?**  
+No! Everything uses a single port (`5959`). Both sketches and browser logs talk to this single endpoint.
+
+**Q: Does it send my data to the cloud?**  
+No. All logs and sketches are stored 100% locally on your machine in a local SQLite file (`logs.db`).
+
+**Q: What domains does the logger capture?**  
+By default, it automatically captures `localhost` and `127.0.0.1`. You can add more domains in the extension settings page.
 
 ---
 
