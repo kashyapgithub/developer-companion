@@ -428,6 +428,18 @@ body[data-mode="dev"] #effects-panel { display: none; }
   border-color: rgba(16, 185, 129, 0.6);
 }
 
+.companion-btn.tutorial {
+  background: rgba(99, 102, 241, 0.16);
+  border-color: rgba(99, 102, 241, 0.45);
+  color: #a5b4fc;
+}
+
+.companion-btn.tutorial:hover {
+  background: rgba(99, 102, 241, 0.28);
+  border-color: rgba(99, 102, 241, 0.7);
+  color: #ffffff;
+}
+
 .companion-btn.loading {
   opacity: 0.6;
   pointer-events: none;
@@ -555,12 +567,24 @@ body[data-mode="dev"] #effects-panel { display: none; }
   height: 80vh;
 }
 
-.status-indicator.live {
+.status-indicator {
   width: 8px;
   height: 8px;
   border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.status-indicator.live {
   background: #10b981;
   box-shadow: 0 0 8px #10b981;
+}
+.status-indicator.error {
+  background: #ef4444;
+  box-shadow: 0 0 8px #ef4444;
+}
+.status-indicator.pending {
+  background: #f59e0b;
+  box-shadow: 0 0 8px #f59e0b;
 }
 
 .logs-filter-bar {
@@ -684,4 +708,309 @@ body[data-mode="dev"] #effects-panel { display: none; }
 .companion-toast.success { background: #064e3b; border-color: #059669; color: #6ee7b7; }
 .companion-toast.error { background: #7f1d1d; border-color: #dc2626; color: #fca5a5; }
 .companion-toast.info { background: #1e3a8a; border-color: #2563eb; color: #93c5fd; }
+
+/* Tutorial Panel */
+.tutorial-panel {
+  max-width: 860px;
+  height: 85vh;
+  max-height: 840px;
+}
+
+.tutorial-content {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.tutorial-status-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  background: #171922;
+  border: 1px solid #2d303f;
+  border-radius: 8px;
+  gap: 12px;
+}
+
+.tut-status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: #e5e7eb;
+}
+
+.tutorial-card {
+  padding: 16px 20px;
+  background: #181a24;
+  border: 1px solid #282b3a;
+  border-radius: 8px;
+}
+
+.tutorial-card.intro-card {
+  background: rgba(99, 102, 241, 0.08);
+  border-color: rgba(99, 102, 241, 0.25);
+}
+
+.tutorial-card h3 {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #f3f4f6;
+}
+
+.tutorial-card p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: #9ca3af;
+}
+
+.tutorial-card p strong {
+  color: #e5e7eb;
+}
+
+.tutorial-step {
+  display: flex;
+  gap: 16px;
+  padding: 18px 20px;
+  background: #161821;
+  border: 1px solid #282a38;
+  border-radius: 10px;
+}
+
+.step-badge {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #3b82f6;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.4);
+}
+
+.step-body {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.step-body h4 {
+  margin: 0 0 6px;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: #f3f4f6;
+}
+
+.step-body p {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: #9ca3af;
+  line-height: 1.5;
+}
+
+.tut-quick-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.tut-option-box {
+  padding: 12px 14px;
+  background: #1e202b;
+  border: 1px solid #2d3040;
+  border-radius: 7px;
+  font-size: 12.5px;
+}
+
+.tut-option-box strong {
+  display: block;
+  color: #f3f4f6;
+  margin-bottom: 6px;
+}
+
+.tut-option-box ul {
+  margin: 6px 0 0 16px;
+  padding: 0;
+  color: #9ca3af;
+}
+
+.tut-option-box li {
+  margin-bottom: 4px;
+}
+
+.code-snippet-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: #0d0e13;
+  border: 1px solid #2a2c3a;
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-family: var(--font-mono, monospace);
+  font-size: 12px;
+  color: #a5f3fc;
+  overflow-x: auto;
+}
+
+.code-snippet-box.multiline {
+  align-items: flex-start;
+}
+
+.code-snippet-box.multiline pre {
+  margin: 0;
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  overflow-x: auto;
+}
+
+.copy-snippet-btn {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  background: #252834;
+  border: 1px solid #3c4052;
+  border-radius: 5px;
+  color: #e5e7eb;
+  font-size: 11.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.copy-snippet-btn:hover {
+  background: #323646;
+  color: #fff;
+}
+
+.copy-snippet-btn.copied {
+  background: #065f46;
+  border-color: #059669;
+  color: #a7f3d0;
+}
+
+.agent-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid #2a2c3a;
+  padding-bottom: 8px;
+}
+
+.agent-tab {
+  padding: 6px 12px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: #9ca3af;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.agent-tab:hover {
+  color: #e5e7eb;
+  background: #1e202b;
+}
+
+.agent-tab.active {
+  background: #2563eb;
+  color: #fff;
+  border-color: #3b82f6;
+}
+
+.agent-tab-pane {
+  display: none;
+}
+
+.agent-tab-pane.active {
+  display: block;
+}
+
+.tut-ordered-list {
+  margin: 0 0 12px 18px;
+  padding: 0;
+  font-size: 13px;
+  color: #9ca3af;
+  line-height: 1.55;
+}
+
+.tut-ordered-list li {
+  margin-bottom: 4px;
+}
+
+.tut-config-table {
+  background: #1a1c26;
+  border: 1px solid #2c2f3e;
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin-bottom: 10px;
+  font-size: 12.5px;
+}
+
+.tut-config-table div {
+  margin-bottom: 6px;
+}
+
+.tut-config-table div:last-child {
+  margin-bottom: 0;
+}
+
+.tut-config-table span {
+  color: #9ca3af;
+  display: inline-block;
+  width: 90px;
+}
+
+.tut-hint {
+  font-size: 11.5px;
+  color: #9ca3af;
+  margin-top: 6px;
+}
+
+.tut-prompts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.tut-prompt-card {
+  padding: 12px 14px;
+  background: #1a1c26;
+  border: 1px solid #282b39;
+  border-radius: 7px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.prompt-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #60a5fa;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tut-prompt-card code {
+  font-size: 12px;
+  color: #d1d5db;
+  line-height: 1.4;
+  background: transparent;
+  padding: 0;
+}
+
 

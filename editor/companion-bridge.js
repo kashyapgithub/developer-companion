@@ -27,6 +27,13 @@ export function initCompanionBridge() {
   const logsCountLabel = document.getElementById("logs-count-label");
   const logsSearchInput = document.getElementById("logs-search");
 
+  const tutorialBtn = document.getElementById("agent-tutorial-btn");
+  const tutorialModal = document.getElementById("tutorial-modal");
+  const tutorialCloseBtn = document.getElementById("tutorial-close-btn");
+  const tutTestBtn = document.getElementById("tut-test-btn");
+  const tutStatusDot = document.getElementById("tut-status-dot");
+  const tutStatusText = document.getElementById("tut-status-text");
+
   const toastEl = document.getElementById("companion-toast");
 
   let currentLogs = [];
@@ -212,6 +219,90 @@ export function initCompanionBridge() {
     cb.addEventListener("change", renderLogsList);
   });
 
+  // --- Agent Connection Tutorial Modal ------------------------------------
+  async function checkBackendStatus() {
+    if (!tutStatusText || !tutStatusDot) return false;
+    tutStatusDot.className = "status-indicator pending";
+    tutStatusText.textContent = "Checking local backend connection (port 5959)...";
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2000);
+      const res = await fetch("http://127.0.0.1:5959/api/status", {
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+      if (res.ok) {
+        tutStatusDot.className = "status-indicator live";
+        tutStatusText.textContent = "Backend Status: Connected on port 5959 (Agent Bridge is live)";
+        return true;
+      }
+    } catch {}
+    tutStatusDot.className = "status-indicator error";
+    tutStatusText.textContent = "Backend Status: Server not detected on port 5959. Run 'npm start' in server/";
+    return false;
+  }
+
+  function openTutorialModal() {
+    tutorialModal?.classList.remove("hidden");
+    document.body.style.overflow = "hidden";
+    checkBackendStatus();
+  }
+
+  function closeTutorialModal() {
+    tutorialModal?.classList.add("hidden");
+    document.body.style.overflow = "";
+  }
+
+  tutorialBtn?.addEventListener("click", openTutorialModal);
+  tutorialCloseBtn?.addEventListener("click", closeTutorialModal);
+  tutorialModal?.querySelector(".companion-modal-backdrop")?.addEventListener("click", closeTutorialModal);
+
+  tutTestBtn?.addEventListener("click", () => {
+    checkBackendStatus().then((ok) => {
+      showToast(
+        ok ? "Backend server is running on port 5959" : "Backend server not responding on port 5959",
+        ok ? "success" : "error"
+      );
+    });
+  });
+
+  // Agent tabs switching
+  tutorialModal?.querySelectorAll(".agent-tab").forEach((tab) => {
+    tab.addEventListener("click", () => {
+      const targetId = `pane-${tab.dataset.tab}`;
+      tutorialModal.querySelectorAll(".agent-tab").forEach((t) => t.classList.remove("active"));
+      tutorialModal.querySelectorAll(".agent-tab-pane").forEach((p) => p.classList.remove("active"));
+      tab.classList.add("active");
+      const targetPane = document.getElementById(targetId);
+      if (targetPane) targetPane.classList.add("active");
+    });
+  });
+
+  // Copy buttons
+  tutorialModal?.querySelectorAll(".copy-snippet-btn").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      let text = btn.dataset.copy;
+      if (!text) {
+        const codeEl = btn.closest(".code-snippet-box")?.querySelector("code");
+        text = codeEl?.textContent?.trim() || "";
+      }
+      if (text) {
+        try {
+          await navigator.clipboard.writeText(text);
+          const orig = btn.textContent;
+          btn.textContent = "Copied!";
+          btn.classList.add("copied");
+          setTimeout(() => {
+            btn.textContent = orig;
+            btn.classList.remove("copied");
+          }, 2000);
+        } catch {
+          showToast("Failed to copy to clipboard", "error");
+        }
+      }
+    });
+  });
+
   // --- Badge & Status Updater ---------------------------------------------
   async function updateStatusBadge() {
     if (!chrome.runtime?.sendMessage) return;
@@ -238,6 +329,7 @@ export function initCompanionBridge() {
     if (e.key === "Escape") {
       closeGithubModal();
       closeLogsModal();
+      closeTutorialModal();
     }
   });
 }

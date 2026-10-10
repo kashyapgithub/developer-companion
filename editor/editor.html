@@ -160,6 +160,15 @@
           <path d="M2 3h12M2 7h12M2 11h8"/>
         </svg>
       </button>
+
+      <button id="agent-tutorial-btn" class="companion-btn tutorial" title="How to connect this extension to your AI agent in backend">
+        <svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8">
+          <circle cx="8" cy="8" r="6"/>
+          <path d="M6.5 6.5a1.5 1.5 0 013 0c0 1-1.5 1.5-1.5 2.5"/>
+          <circle cx="8" cy="11.5" r="0.5" fill="currentColor"/>
+        </svg>
+        How to Connect to Agent
+      </button>
     </div>
 
   </header>
@@ -266,6 +275,162 @@
         </div>
       </div>
       <div id="logs-list-view" class="logs-content-area"></div>
+    </div>
+  </div>
+
+  <!-- Agent Connection Tutorial Modal -->
+  <div id="tutorial-modal" class="companion-modal hidden">
+    <div class="companion-modal-backdrop"></div>
+    <div class="companion-modal-panel tutorial-panel">
+      <div class="companion-modal-header">
+        <div class="modal-title-group">
+          <svg viewBox="0 0 16 16" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8">
+            <circle cx="8" cy="8" r="6"/>
+            <path d="M6.5 6.5a1.5 1.5 0 013 0c0 1-1.5 1.5-1.5 2.5"/>
+            <circle cx="8" cy="11.5" r="0.5" fill="currentColor"/>
+          </svg>
+          <span>How to Connect to Your AI Agent in Backend</span>
+        </div>
+        <div class="modal-actions">
+          <button id="tutorial-close-btn" class="companion-icon-btn" title="Close">×</button>
+        </div>
+      </div>
+      <div class="tutorial-content">
+        <!-- Live backend connection status bar -->
+        <div class="tutorial-status-banner">
+          <div class="tut-status-indicator">
+            <span class="status-indicator pending" id="tut-status-dot"></span>
+            <span id="tut-status-text">Checking local backend connection (port 5959)...</span>
+          </div>
+          <button id="tut-test-btn" class="companion-icon-btn">Test Connection</button>
+        </div>
+
+        <!-- Overview card -->
+        <div class="tutorial-card intro-card">
+          <h3>The Big Picture: How This Works</h3>
+          <p>
+            This extension is your <strong>visual cockpit</strong> (drawing UI designs and collecting browser errors).
+            The <strong>backend server</strong> is a lightweight script on your machine that gives your AI agent (Claude Code, Cursor, Antigravity, etc.) instant access to those sketches and logs via the standard <strong>MCP (Model Context Protocol)</strong>.
+          </p>
+        </div>
+
+        <!-- Step 1 -->
+        <div class="tutorial-step">
+          <div class="step-badge">1</div>
+          <div class="step-body">
+            <h4>Start the Local Backend Server</h4>
+            <p>
+              Your agent connects to the local server running on port <code>5959</code>. Start it with one of these options:
+            </p>
+            <div class="tut-quick-options">
+              <div class="tut-option-box">
+                <strong>Option A: One-click installer (Easiest)</strong>
+                <p>In the project folder, simply double-click:</p>
+                <ul>
+                  <li><strong>Mac / Linux:</strong> <code>Install-Mac-Linux.command</code></li>
+                  <li><strong>Windows:</strong> <code>Install-Windows.bat</code></li>
+                </ul>
+              </div>
+              <div class="tut-option-box">
+                <strong>Option B: Terminal command</strong>
+                <div class="code-snippet-box">
+                  <code>cd server &amp;&amp; npm install &amp;&amp; npm start</code>
+                  <button class="copy-snippet-btn" data-copy="cd server &amp;&amp; npm install &amp;&amp; npm start">Copy</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="tutorial-step">
+          <div class="step-badge">2</div>
+          <div class="step-body">
+            <h4>Register with Your AI Coding Agent</h4>
+            <p>Choose your coding assistant below to get the exact setup command:</p>
+
+            <div class="agent-tabs">
+              <button class="agent-tab active" data-tab="claude">Claude Code</button>
+              <button class="agent-tab" data-tab="cursor">Cursor IDE</button>
+              <button class="agent-tab" data-tab="antigravity">Antigravity / Gemini</button>
+              <button class="agent-tab" data-tab="vscode">VS Code (Cline / Roo)</button>
+            </div>
+
+            <!-- Claude Code Pane -->
+            <div class="agent-tab-pane active" id="pane-claude">
+              <p>Run this command in your terminal to register the tool globally:</p>
+              <div class="code-snippet-box">
+                <code id="cmd-claude">claude mcp add developer-companion node server/server.js</code>
+                <button class="copy-snippet-btn" data-copy="claude mcp add developer-companion node server/server.js">Copy Command</button>
+              </div>
+              <p class="tut-hint">Or provide the absolute path to <code>server/server.js</code>.</p>
+            </div>
+
+            <!-- Cursor IDE Pane -->
+            <div class="agent-tab-pane" id="pane-cursor">
+              <ol class="tut-ordered-list">
+                <li>Open Cursor Settings (<code>Cmd+,</code> or <code>Ctrl+,</code>).</li>
+                <li>Navigate to <strong>Features</strong> &gt; <strong>MCP</strong> &gt; <strong>+ Add New MCP Server</strong>.</li>
+                <li>Enter the following values:</li>
+              </ol>
+              <div class="tut-config-table">
+                <div><span>Name:</span> <code>developer-companion</code></div>
+                <div><span>Type:</span> <code>command</code></div>
+                <div><span>Command:</span> <code>node /absolute/path/to/server/server.js</code></div>
+              </div>
+            </div>
+
+            <!-- Antigravity Pane -->
+            <div class="agent-tab-pane" id="pane-antigravity">
+              <p>Add this entry to your MCP configuration file (<code>mcp.json</code>):</p>
+              <div class="code-snippet-box multiline">
+                <pre><code>{
+  "mcpServers": {
+    "developer-companion": {
+      "command": "node",
+      "args": ["/absolute/path/to/server/server.js"]
+    }
+  }
+}</code></pre>
+                <button class="copy-snippet-btn" data-copy='{"mcpServers":{"developer-companion":{"command":"node","args":["/absolute/path/to/server/server.js"]}}}'>Copy JSON</button>
+              </div>
+            </div>
+
+            <!-- VS Code Pane -->
+            <div class="agent-tab-pane" id="pane-vscode">
+              <p>In Cline, Roo Code, or any VS Code MCP extension:</p>
+              <ol class="tut-ordered-list">
+                <li>Open MCP Settings.</li>
+                <li>Add a new <strong>stdio</strong> server named <code>developer-companion</code>.</li>
+                <li>Set command to <code>node</code> and args to <code>["/absolute/path/to/server/server.js"]</code>.</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="tutorial-step">
+          <div class="step-badge">3</div>
+          <div class="step-body">
+            <h4>Start Using It With Prompts</h4>
+            <p>Your agent now has these tools built in. Try asking:</p>
+            <div class="tut-prompts-grid">
+              <div class="tut-prompt-card">
+                <span class="prompt-title">Generate UI Code</span>
+                <code>"Check get_latest_sketch and write the HTML/CSS component."</code>
+              </div>
+              <div class="tut-prompt-card">
+                <span class="prompt-title">Fix Browser Errors</span>
+                <code>"Read the browser logs from localhost with get_browser_logs and fix the exception."</code>
+              </div>
+              <div class="tut-prompt-card">
+                <span class="prompt-title">Manage Repositories</span>
+                <code>"List my GitHub repos using get_github_repos."</code>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
