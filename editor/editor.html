@@ -2,15 +2,20 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>UI Sketch</title>
+  <title>Developer Companion</title>
   <link rel="stylesheet" href="editor.css" />
+  <link rel="stylesheet" href="ui/tokens.css" />
+  <link rel="stylesheet" href="ui/topbar.css" />
+  <link rel="stylesheet" href="ui/sidepanel.css" />
 </head>
 <body>
 
   <!-- ===================== TOOLBAR ===================== -->
   <header id="toolbar">
+    <div class="tb-left">
+      <div class="brand" title="Developer Companion"><img src="../icons/icon48.png" alt="" width="20" height="20" /><span class="lbl">Sketch</span></div>
 
-    <div class="tool-group" id="screenshot-group">
+      <div class="tool-group" id="screenshot-group">
       <button id="screenshot-btn" class="primary" title="Add a screenshot (Ctrl/Cmd+Shift+K) — or just press Ctrl/Cmd+V with an image copied">Add screenshot ▾</button>
       <div id="screenshot-menu" class="shot-menu hidden" role="menu">
         <button data-shot="paste" role="menuitem"><span>Paste from clipboard</span><kbd>Ctrl/Cmd V</kbd></button>
@@ -20,137 +25,36 @@
       <span id="screenshot-status" class="hint"></span>
     </div>
 
-    <div class="tool-group">
-      <label class="field">
-        Stroke
-        <input type="color" id="stroke-color" value="#1b1c20" />
-      </label>
-      <label class="field">
-        Fill
-        <input type="color" id="fill-color" value="#3a5bd9" />
-      </label>
-      <label class="field checkbox">
-        <input type="checkbox" id="fill-enabled" />
-        filled
-      </label>
-      <label class="field">
-        Width
-        <input type="range" id="stroke-width" min="1" max="12" value="2" />
-      </label>
+      <span class="tb-sep"></span>
+
+      <div class="tool-group" id="history-group">
+        <button id="undo-btn" class="icon-btn" title="Undo (Ctrl+Z)" aria-label="Undo"><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 3.5L2.5 6.5l3 3"/><path d="M2.5 6.5H10a3.5 3.5 0 010 7H6"/></svg></button>
+        <button id="redo-btn" class="icon-btn" title="Redo (Ctrl+Shift+Z)" aria-label="Redo"><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 3.5l3 3-3 3"/><path d="M13.5 6.5H6a3.5 3.5 0 000 7h4"/></svg></button>
+      </div>
+
+      <div class="tool-group" id="zoom-group">
+        <button id="zoom-out" class="icon-btn" title="Zoom out (Ctrl −)" aria-label="Zoom out"><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8h9"/></svg></button>
+        <button id="zoom-label" title="Reset to 100% (Ctrl 0)">100%</button>
+        <button id="zoom-in" class="icon-btn" title="Zoom in (Ctrl +)" aria-label="Zoom in"><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8h9M8 3.5v9"/></svg></button>
+        <button id="zoom-fit" title="Fit all content (Shift 1)">Fit</button>
+      </div>
     </div>
 
-    <div class="tool-group" id="effects-group">
-      <label class="field" title="Rounded corners (rectangles only)">
-        Radius
-        <input type="range" id="corner-radius" min="0" max="60" value="0" />
-      </label>
-      <label class="field" title="Applies to the selected shape, or the next one you draw">
-        Opacity
-        <input type="range" id="opacity" min="0" max="100" value="100" />
-      </label>
-      <button id="effects-btn" title="Effects: shadows, blurs, noise, texture, glass, shader">Effects <span id="effects-count" class="badge hidden">0</span></button>
-      <label class="field checkbox">
-        <input type="checkbox" id="gradient-enabled" />
-        gradient
-      </label>
-      <label class="field hidden" id="gradient-to-field">
-        to
-        <input type="color" id="gradient-to-color" value="#1c2b6b" />
-      </label>
-      <label class="field checkbox" title="Dashed stroke">
-        <input type="checkbox" id="dashed-enabled" />
-        dashed
-      </label>
-      <label class="field checkbox" title="Right-angle routing for connectors">
-        <input type="checkbox" id="elbow-enabled" />
-        elbow
-      </label>
-      <label class="field" title="Text size">
-        Size
-        <input type="number" id="font-size" min="8" max="400" value="18" />
-      </label>
-      <label class="field" title="Polygon sides / star points">
-        Points
-        <input type="number" id="shape-count" min="3" max="60" value="5" />
-      </label>
-      <label class="field" title="Star inner radius, % of the outer radius">
-        Inner
-        <input type="number" id="shape-inner" min="5" max="95" value="50" />
-      </label>
-      <label class="field" title="Rotation in degrees (rectangles, ellipses, images, text)">
-        Rotate
-        <input type="number" id="rotation" min="-180" max="180" value="0" />
-      </label>
-    </div>
-
-    <div class="tool-group" id="arrange-group">
-      <button class="icon-btn" data-align="left" title="Align left"><svg viewBox="0 0 16 16"><path d="M2 1v14"/><rect x="4" y="3" width="10" height="3"/><rect x="4" y="9" width="6" height="3"/></svg></button>
-      <button class="icon-btn" data-align="hcenter" title="Align horizontal centres"><svg viewBox="0 0 16 16"><path d="M8 1v14"/><rect x="3" y="3" width="10" height="3"/><rect x="5" y="9" width="6" height="3"/></svg></button>
-      <button class="icon-btn" data-align="right" title="Align right"><svg viewBox="0 0 16 16"><path d="M14 1v14"/><rect x="2" y="3" width="10" height="3"/><rect x="6" y="9" width="6" height="3"/></svg></button>
-      <button class="icon-btn" data-align="top" title="Align top"><svg viewBox="0 0 16 16"><path d="M1 2h14"/><rect x="3" y="4" width="3" height="10"/><rect x="9" y="4" width="3" height="6"/></svg></button>
-      <button class="icon-btn" data-align="vcenter" title="Align vertical centres"><svg viewBox="0 0 16 16"><path d="M1 8h14"/><rect x="3" y="3" width="3" height="10"/><rect x="9" y="5" width="3" height="6"/></svg></button>
-      <button class="icon-btn" data-align="bottom" title="Align bottom"><svg viewBox="0 0 16 16"><path d="M1 14h14"/><rect x="3" y="2" width="3" height="10"/><rect x="9" y="6" width="3" height="6"/></svg></button>
-      <button class="icon-btn" data-distribute="x" title="Distribute horizontally (3+ shapes)"><svg viewBox="0 0 16 16"><path d="M2 1v14M14 1v14"/><rect x="6" y="4" width="4" height="8"/></svg></button>
-      <button class="icon-btn" data-distribute="y" title="Distribute vertically (3+ shapes)"><svg viewBox="0 0 16 16"><path d="M1 2h14M1 14h14"/><rect x="4" y="6" width="8" height="4"/></svg></button>
-      <button id="group-btn" title="Group (Ctrl+G)">Group</button>
-      <button id="ungroup-btn" title="Ungroup (Ctrl+Shift+G)">Ungroup</button>
-      <button id="delete-btn" class="danger" title="Delete the selected shape(s) (Delete / Backspace)" disabled>Delete</button>
-    </div>
-
-    <div class="tool-group">
-      <button id="undo-btn" title="Undo (Ctrl+Z)">Undo</button>
-      <button id="redo-btn" title="Redo (Ctrl+Shift+Z)">Redo</button>
-      <button id="clear-btn" title="Clear canvas">Clear</button>
-    </div>
-
-    <div class="tool-group" id="zoom-group">
-      <button id="zoom-out" title="Zoom out (Ctrl −)">−</button>
-      <button id="zoom-label" title="Reset to 100% (Ctrl 0)">100%</button>
-      <button id="zoom-in" title="Zoom in (Ctrl +)">+</button>
-      <button id="zoom-fit" title="Fit all content (Shift 1)">Fit</button>
-      <button id="layers-toggle" title="Show / hide the layers panel">Layers</button>
-    </div>
-
-    <div class="tool-group export-group">
-      <span class="hint">Drop or paste a screenshot to add it as a reference</span>
-      <label class="field">
-        Send via
-        <select id="export-mode">
-          <option value="local">Local file</option>
-          <option value="mcp">MCP server</option>
-        </select>
-      </label>
-      <label class="field" id="folder-field">
-        Folder
-        <input type="text" id="export-folder" value="ui-sketches" spellcheck="false" />
-      </label>
-      <label class="field" id="agent-path-field" title="Where your agent sees the files. In a VMware Fusion VM with a shared folder this is like /mnt/hgfs/sketches. Leave empty if the agent runs on this computer and uses the folder above.">
-        Agent path
-        <input type="text" id="agent-path" placeholder="optional, e.g. /mnt/hgfs/sketches" spellcheck="false" />
-      </label>
-      <button id="copy-prompt-btn" title="Copies a ready-to-paste message telling your agent where the sketch is">Copy agent prompt</button>
-      <button id="connection-btn" class="hidden" title="Where does your coding agent run? This computer, a VM, or another computer">
-        <span id="connection-dot" class="dot"></span> Agent connection: <span id="connection-label">this computer</span>
-      </button>
-      <button id="export-btn" class="primary">Send to project</button>
-      <span id="export-status"></span>
-    </div>
-
-    <!-- Developer Companion Tools -->
-    <div class="tool-group companion-group" id="companion-group">
+    <div class="tb-right">
+      <div class="tool-group companion-group" id="companion-group">
       <button id="hover-mode-btn" class="companion-btn hover-toggle" aria-pressed="false" title="Float the editor over any tab (draggable, minimizable)">
         <svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8">
           <rect x="1.5" y="3" width="13" height="10" rx="1.5"/>
           <rect x="7" y="7" width="6" height="4.5" rx="1" fill="currentColor" stroke="none"/>
         </svg>
-        <span class="hover-label">Hover over tabs</span>
+        <span class="hover-label lbl">Hover over tabs</span>
       </button>
 
       <button id="github-dashboard-btn" class="companion-btn" title="Open GitHub Repo Dashboard">
         <svg viewBox="0 0 16 16" width="15" height="15" fill="currentColor">
           <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
         </svg>
-        GitHub Dashboard
+        <span class="lbl">GitHub</span>
       </button>
 
       <button id="send-logs-btn" class="companion-btn accent" title="Send captured browser console & network logs to the coding agent">
@@ -159,7 +63,7 @@
           <path d="M5 6h6M5 9h4"/>
           <path d="M11 11l3-3-3-3"/>
         </svg>
-        Send browser logs to agent
+        <span class="lbl">Send logs</span>
         <span id="logs-badge" class="companion-badge hidden">0</span>
       </button>
 
@@ -175,10 +79,44 @@
           <path d="M6.5 6.5a1.5 1.5 0 013 0c0 1-1.5 1.5-1.5 2.5"/>
           <circle cx="8" cy="11.5" r="0.5" fill="currentColor"/>
         </svg>
-        How to Connect to Agent
+        <span class="lbl">Connect agent</span>
       </button>
-    </div>
+      </div>
 
+      <span class="tb-sep"></span>
+
+      <div class="tool-group export-group">
+        <label class="field select-field" title="How the sketch reaches your agent">
+          <span class="lbl">Send via</span>
+          <select id="export-mode">
+            <option value="local">Local file</option>
+            <option value="mcp">MCP server</option>
+          </select>
+        </label>
+
+        <div class="popover-wrap">
+          <button id="agent-settings-btn" class="icon-btn" title="Agent settings: folder, path, connection" aria-haspopup="true" aria-expanded="false"><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="2.2"/><path d="M8 1.8v1.6M8 12.6v1.6M1.8 8h1.6M12.6 8h1.6M3.6 3.6l1.1 1.1M11.3 11.3l1.1 1.1M3.6 12.4l1.1-1.1M11.3 4.7l1.1-1.1"/></svg></button>
+          <div id="agent-popover" class="popover hidden" role="dialog" aria-label="Agent settings">
+            <p class="pop-hint">Drop or paste a screenshot anywhere on the canvas to add it as a reference.</p>
+            <label class="field stack" id="folder-field">
+              Folder
+              <input type="text" id="export-folder" value="ui-sketches" spellcheck="false" />
+            </label>
+            <label class="field stack" id="agent-path-field" title="Where your agent sees the files. In a VMware Fusion VM with a shared folder this is like /mnt/hgfs/sketches. Leave empty if the agent runs on this computer and uses the folder above.">
+              Agent path
+              <input type="text" id="agent-path" placeholder="optional, e.g. /mnt/hgfs/sketches" spellcheck="false" />
+            </label>
+            <button id="connection-btn" class="hidden" title="Where does your coding agent run? This computer, a VM, or another computer">
+              <span id="connection-dot" class="dot"></span> Agent connection: <span id="connection-label">this computer</span>
+            </button>
+            <button id="copy-prompt-btn" title="Copies a ready-to-paste message telling your agent where the sketch is">Copy agent prompt</button>
+          </div>
+        </div>
+
+        <button id="export-btn" class="primary">Send to project</button>
+        <span id="export-status" role="status"></span>
+      </div>
+    </div>
   </header>
 
   <!-- ===================== CANVAS ===================== -->
@@ -217,9 +155,73 @@
       </section>
     </main>
 
-    <aside id="layers">
-      <div class="layers-head">Layers</div>
-      <div id="layers-list"></div>
+    <aside id="side" data-tab="design">
+      <div class="side-tabs" role="tablist">
+        <button id="tab-design" role="tab" data-tab="design" aria-selected="true">Design</button>
+        <button id="tab-layers" role="tab" data-tab="layers" aria-selected="false">Layers</button>
+      </div>
+
+      <!-- Design tab: everything that edits the selected shape -->
+      <section id="pane-design" class="side-pane" role="tabpanel">
+        <div class="sec">
+          <h3>Arrange</h3>
+          <div class="align-grid" id="arrange-group">
+            <button class="icon-btn" data-align="left" title="Align left"><svg viewBox="0 0 16 16"><path d="M2 1v14"/><rect x="4" y="3" width="10" height="3"/><rect x="4" y="9" width="6" height="3"/></svg></button>
+      <button class="icon-btn" data-align="hcenter" title="Align horizontal centres"><svg viewBox="0 0 16 16"><path d="M8 1v14"/><rect x="3" y="3" width="10" height="3"/><rect x="5" y="9" width="6" height="3"/></svg></button>
+      <button class="icon-btn" data-align="right" title="Align right"><svg viewBox="0 0 16 16"><path d="M14 1v14"/><rect x="2" y="3" width="10" height="3"/><rect x="6" y="9" width="6" height="3"/></svg></button>
+      <button class="icon-btn" data-align="top" title="Align top"><svg viewBox="0 0 16 16"><path d="M1 2h14"/><rect x="3" y="4" width="3" height="10"/><rect x="9" y="4" width="3" height="6"/></svg></button>
+      <button class="icon-btn" data-align="vcenter" title="Align vertical centres"><svg viewBox="0 0 16 16"><path d="M1 8h14"/><rect x="3" y="3" width="3" height="10"/><rect x="9" y="5" width="3" height="6"/></svg></button>
+      <button class="icon-btn" data-align="bottom" title="Align bottom"><svg viewBox="0 0 16 16"><path d="M1 14h14"/><rect x="3" y="2" width="3" height="10"/><rect x="9" y="6" width="3" height="6"/></svg></button>
+      <button class="icon-btn" data-distribute="x" title="Distribute horizontally (3+ shapes)"><svg viewBox="0 0 16 16"><path d="M2 1v14M14 1v14"/><rect x="6" y="4" width="4" height="8"/></svg></button>
+      <button class="icon-btn" data-distribute="y" title="Distribute vertically (3+ shapes)"><svg viewBox="0 0 16 16"><path d="M1 2h14M1 14h14"/><rect x="4" y="6" width="8" height="4"/></svg></button>
+          </div>
+          <div class="btn-row">
+            <button id="group-btn" title="Group (Ctrl+G)">Group</button>
+            <button id="ungroup-btn" title="Ungroup (Ctrl+Shift+G)">Ungroup</button>
+            <button id="delete-btn" class="danger" title="Delete the selected shape(s) (Delete / Backspace)" disabled>Delete</button>
+          </div>
+        </div>
+
+        <div class="sec">
+          <h3>Fill</h3>
+          <div class="row"><span>Color</span><span class="ctl"><input type="color" id="fill-color" value="#3a5bd9" /><label class="switch" title="Fill the shape"><input type="checkbox" id="fill-enabled" /><i></i></label></span></div>
+          <div class="row"><span>Gradient</span><span class="ctl"><label class="field hidden" id="gradient-to-field" title="Gradient end color"><input type="color" id="gradient-to-color" value="#1c2b6b" /></label><label class="switch"><input type="checkbox" id="gradient-enabled" /><i></i></label></span></div>
+        </div>
+
+        <div class="sec">
+          <h3>Stroke</h3>
+          <div class="row"><span>Color</span><span class="ctl"><input type="color" id="stroke-color" value="#1b1c20" /></span></div>
+          <div class="row"><span>Width</span><span class="ctl"><input type="range" id="stroke-width" min="1" max="12" value="2" /></span></div>
+          <div class="row" title="Dashed stroke"><span>Dashed</span><span class="ctl"><label class="switch"><input type="checkbox" id="dashed-enabled" /><i></i></label></span></div>
+          <div class="row" title="Right-angle routing for connectors"><span>Elbow connector</span><span class="ctl"><label class="switch"><input type="checkbox" id="elbow-enabled" /><i></i></label></span></div>
+        </div>
+
+        <div class="sec" id="effects-group">
+          <h3>Appearance</h3>
+          <div class="row" title="Rounded corners (rectangles only)"><span>Radius</span><span class="ctl"><input type="range" id="corner-radius" min="0" max="60" value="0" /></span></div>
+          <div class="row" title="Applies to the selected shape, or the next one you draw"><span>Opacity</span><span class="ctl"><input type="range" id="opacity" min="0" max="100" value="100" /></span></div>
+          <button id="effects-btn" class="wide" title="Effects: shadows, blurs, noise, texture, glass, shader">Effects <span id="effects-count" class="badge hidden">0</span></button>
+        </div>
+
+        <div class="sec">
+          <h3>Shape &amp; text</h3>
+          <div class="num-grid">
+            <label class="num" title="Text size"><span>Size</span><input type="number" id="font-size" min="8" max="400" value="18" /></label>
+            <label class="num" title="Rotation in degrees (rectangles, ellipses, images, text)"><span>Rotate</span><input type="number" id="rotation" min="-180" max="180" value="0" /></label>
+            <label class="num" title="Polygon sides / star points"><span>Points</span><input type="number" id="shape-count" min="3" max="60" value="5" /></label>
+            <label class="num" title="Star inner radius, % of the outer radius"><span>Inner</span><input type="number" id="shape-inner" min="5" max="95" value="50" /></label>
+          </div>
+        </div>
+
+        <div class="side-foot">
+          <button id="clear-btn" class="ghost-danger" title="Clear canvas">Clear canvas</button>
+        </div>
+      </section>
+
+      <!-- Layers tab -->
+      <section id="layers" class="side-pane" role="tabpanel" hidden>
+        <div id="layers-list"></div>
+      </section>
     </aside>
 
     <aside id="inspect-panel" class="hidden">

@@ -1,91 +1,61 @@
 # Developer Companion
 
-> **The ultimate bridge between your browser and AI coding agents.**  
-> Draw UI wireframes, search and summarize your GitHub repos, and stream browser console errors straight to Claude Code, Cursor, or Antigravity - all in **one single Chrome extension**.
+**Show your coding agent what you want, and what went wrong.**
+
+Terminal agents like Claude Code, Cursor and Antigravity are great at code and bad at seeing. Developer Companion is a Chrome extension that gives them eyes: draw the UI you want, point at the bug you hit, and your agent reads both through one local connection.
+
+- **Sketch it.** A Figma-style canvas right in the browser: frames, shapes, text, connectors, effects, layers, screenshots you can draw over, and flow diagrams for architecture.
+- **Show the bug.** One click sends your page's console errors and failed network calls to the agent. No more copying from DevTools.
+- **Keep your repos in reach.** Your GitHub repositories, tagged and summarized, are available to the agent as context.
+- **Float over any tab.** Pop the editor over whatever page you are testing, move it, minimize it, keep drawing.
+
+Everything runs on your machine. Nothing goes to a cloud service.
 
 ---
 
-## 30-Second Summary
-
-Instead of juggling three separate tools and multiple servers, **Developer Companion** combines everything into **one extension and one unified background bridge**:
-
-| Feature | What it does | How it helps your AI Agent |
-| :--- | :--- | :--- |
-| **UI Sketch Canvas** | Draw wireframes and UI designs in a full browser tab. | AI gets exact coordinates, labels, hierarchy and high-res PNG to code your UI accurately. |
-| **GitHub Dashboard** | Access all your repositories with AI summaries and tags. | AI gets a real-time catalog of your projects, dependencies, and codebases. |
-| **Browser Logs to Agent** | One-click capture of console errors and network failures. | AI diagnoses frontend crashes and API bugs without you copy-pasting DevTools. |
-
----
-
-## How It Works
+## How it works
 
 ```
-┌────────────────────────────────────────────────────────────────────────┐
-│                        DEVELOPER COMPANION EXTENSION                   │
-│                                                                        │
-│   [ Canvas Workspace ]       [ GitHub Dashboard ]       [ Send Logs ]  │
-└───────────────────────────────────┬────────────────────────────────────┘
-                                    │ Single connection to localhost:5959
-                                    ▼
-┌────────────────────────────────────────────────────────────────────────┐
-│                    DEVELOPER COMPANION LOCAL BRIDGE                    │
-│                        Node.js  ·  SQLite Database                     │
-└───────────────────────────────────┬────────────────────────────────────┘
-                                    │ Model Context Protocol (stdio)
-                                    ▼
-┌────────────────────────────────────────────────────────────────────────┐
-│               YOUR AI AGENT (Claude Code / Cursor / Windsurf)          │
-│       "I see your wireframe sketch and 2 browser console errors!"       │
-└────────────────────────────────────────────────────────────────────────┘
+   Chrome extension                      Local bridge                   Your agent
+┌──────────────────────┐          ┌─────────────────────┐        ┌───────────────────┐
+│ Canvas · Hover mode  │  HTTP    │ localhost:5959      │  MCP   │ Claude Code       │
+│ Repos  · Browser logs│ ───────▶ │ Node.js + SQLite    │ ─────▶ │ Cursor            │
+└──────────────────────┘          └─────────────────────┘        │ Antigravity …     │
+                                                                 └───────────────────┘
 ```
 
----
-
-## 3-Minute Quickstart
-
-### Step 1: Load the Chrome Extension
-1. Open Google Chrome and go to `chrome://extensions/`.
-2. Turn on **Developer mode** (toggle in the top-right corner).
-3. Click **Load unpacked** (top-left).
-4. Select this folder: `developer-companion`.
-5. Click the **Developer Companion** icon in your Chrome toolbar to open the Canvas.
+The extension saves sketches, logs and your repo list to a small server on your computer. That same server speaks the Model Context Protocol (MCP), so your agent can ask for them with a tool call.
 
 ---
 
-### Step 2: Start the Local Agent Bridge
-The extension talks to a local server on your computer that saves your sketches and logs.
+## Quickstart
 
-- **Mac / Linux**: Double-click `Install-Mac-Linux.command` or run:
+### 1. Load the extension
+1. Open `chrome://extensions/` and turn on **Developer mode**.
+2. Click **Load unpacked** and choose this folder.
+3. Click the Developer Companion icon in the toolbar to open the editor.
+
+### 2. Start the local bridge
+- **Mac / Linux:** double-click `Install-Mac-Linux.command`, or run:
   ```bash
   cd server
   npm install
   npm start
   ```
-- **Windows**: Double-click `Install-Windows.bat`
+- **Windows:** double-click `Install-Windows.bat`.
 
-*The server will start at `http://127.0.0.1:5959` and create a local SQLite database for your logs.*
+The bridge listens on `http://127.0.0.1:5959` and keeps its data in `~/.developer-companion/`.
 
----
+### 3. Connect your agent
 
-### Step 3: Connect to Your AI Coding Agent
-
-#### Option A: Claude Code
-Run this command in your terminal:
+**Claude Code**
 ```bash
 claude mcp add developer-companion node /absolute/path/to/developer-companion/server/server.js
 ```
-*(Or add it to your `~/.claude/mcp.json` file)*
 
-#### Option B: Cursor IDE
-1. Open **Cursor Settings** (`Cmd+,` or `Ctrl+,`).
-2. Go to **Features** -> **MCP** -> **+ Add New MCP Server**.
-3. Fill in:
-   - **Name**: `developer-companion`
-   - **Type**: `command`
-   - **Command**: `node /absolute/path/to/developer-companion/server/server.js`
+**Cursor** — Settings → Features → MCP → Add New MCP Server: name `developer-companion`, type `command`, command `node /absolute/path/to/developer-companion/server/server.js`.
 
-#### Option C: Antigravity / Gemini CLI
-Add this to your MCP configuration:
+**Antigravity, Gemini CLI and other MCP clients**
 ```json
 {
   "mcpServers": {
@@ -97,94 +67,93 @@ Add this to your MCP configuration:
 }
 ```
 
----
-
-## How to Use the 3 Tools
-
-### 1. UI Sketch Canvas (Main UI)
-- **Click the extension icon** in Chrome -> The canvas opens in a full tab.
-- Pick shapes, boxes, buttons, text, and connectors from the floating bottom dock.
-- **Add screenshot:** Use the "Add screenshot" toolbar button, press `Ctrl/Cmd+Shift+K`, or paste (`Ctrl/Cmd+V`) anywhere to place screenshots from clipboard, file upload, or browser screen capture.
-- **Figma-style layers panel:** Drag-and-drop layers to reorder above, below, or inside frames; collapse containers with arrows; multi-select with Shift+click; rename with F2; right-click any layer or canvas shape for arrange, group, and delete options.
-- **Delete shapes:** Use the Delete button in the toolbar, layer trash icon, right-click menu, or Delete / Backspace key.
-- When your sketch is ready, click **"Send to project"** in the top toolbar.
-- Your AI agent can now run `get_latest_sketch` to inspect your design and generate the matching frontend code.
-
-### 2. GitHub Repo Dashboard
-- Inside the canvas, click the **"GitHub Dashboard"** button in the top toolbar.
-- A clean modal pops up showing all your public, private, and forked repos.
-- Filter by language, search by keyword, view commit history, or let AI generate repo summaries.
-- Clicking **"Pop out"** opens the dashboard in its own standalone floating window.
-- The repo catalog is automatically shared with your local agent.
-
-### 3. Send Browser Logs to Agent
-- Whenever you test your web app on `localhost`:
-  - The extension automatically monitors console logs, uncaught exceptions, and failed 4xx/5xx network calls.
-- Just click **"Send browser logs to agent"** on the toolbar.
-- An instant toast confirms: `Sent 14 logs to Agent Server`.
-- Your agent can now run `get_browser_logs` to immediately find the bug and write the fix.
-- Want to view the logs yourself? Click the icon next to the button to open the **Live Logs Drawer**.
+Then tell your agent: *"Check the latest sketch."*
 
 ---
 
-## MCP Tools Reference (What Your Agent Can Do)
+## Using it
 
-Your AI agent automatically gets access to these 5 tools:
+### Sketch your UI
+- Pick tools from the floating dock at the bottom of the canvas.
+- Style the selected shape in the **Design** tab on the right: fill, stroke, radius, opacity, effects, alignment.
+- Manage structure in the **Layers** tab: drag to reorder or nest inside frames, collapse groups, rename with `F2`, right-click for more.
+- **Add screenshot** (or `Ctrl/Cmd+Shift+K`, or just paste) brings in an image from your clipboard, a file, or a screen capture. Draw over it to say exactly what you mean.
+- Add a comment pin to leave a note for the agent on a specific spot.
+- Click **Send to project**. Your agent reads it with `get_latest_sketch`.
 
-| MCP Tool | What the Agent Can Ask For |
+Choose how the sketch travels with **Send via**: a local file you drop into a project folder, or the MCP server. The gear next to it holds the folder, the path your agent sees (useful for VMs and shared folders), and a button that copies a ready-made prompt for your agent.
+
+### Hover over tabs
+Click **Hover over tabs** in the top bar and Chrome asks once for permission to show over web pages. Every tab then gets a small bubble:
+
+- **Click** the bubble to open the editor in a floating window.
+- **Drag** the header (or the bubble) anywhere. Drag the bottom-right corner to resize.
+- **—** minimizes, **↗** opens the full-tab editor, **✕** hides it on that page until reload.
+
+Your canvas is saved automatically and shared between tabs, so it follows you as you switch. A few sites with a strict Content-Security-Policy may refuse the floating editor; the full-tab editor always works.
+
+### Send browser logs
+While you test on `localhost`, the extension watches console output, uncaught exceptions and failed requests. Click **Send logs** to hand them to your agent (`get_browser_logs`), or open the log viewer next to it to read them yourself. Add more sites in the extension's settings page.
+
+### GitHub dashboard
+Click **GitHub** to browse your repositories with language filters, search, tags, folders and AI summaries (bring your own provider key). Pop it out into its own window if you like. The catalog is shared with your agent through `get_github_repos`.
+
+---
+
+## What your agent can call
+
+| Tool | Use |
 | :--- | :--- |
-| `get_latest_sketch` | "Show me the UI sketch the user just drew on canvas." |
-| `get_browser_logs` | "Get recent JavaScript errors and failed network calls from localhost." |
-| `get_github_repos` | "List the user's GitHub repositories and their AI descriptions." |
-| `send_browser_command` | "Tell the browser to reload or capture local storage." |
-| `get_companion_status` | "Check if the server is healthy and how many logs are stored." |
+| `get_latest_sketch` | The sketch you just drew: shapes, layers, labels, coordinates, and a PNG preview. |
+| `get_browser_logs` | Recent console errors and failed network calls. |
+| `get_github_repos` | Your repository catalog with tags and summaries. |
+| `send_browser_command` | Ask the browser to flush logs, attach to a tab, or report status. |
+| `get_companion_status` | Server health and how much is stored. |
 
----
-
-## Terminal Commands
-
-You can also view your logs directly in your terminal:
+You can also query logs from a terminal:
 
 ```bash
-# View recent browser logs
 node server/query_logs.js recent
-
-# View only error logs from localhost
 node server/query_logs.js recent --app localhost --level error
-
-# View grouped errors and how many times they happened
 node server/query_logs.js groups
 ```
 
-*(Python users: `python3 server/query_logs.py recent` works identically)*
+---
+
+## Privacy and security
+
+- **Local only.** Sketches and logs live on your computer (`~/.developer-companion/`). Your GitHub token and AI keys stay in the browser's extension storage and are never sent to the bridge.
+- **Web pages can't reach the bridge.** The server only answers the extension and local tools. Requests from ordinary websites, and DNS-rebinding tricks, are refused.
+- **Secrets are masked.** When an error is captured, localStorage values that look like tokens, passwords, sessions or API keys are replaced with `[REDACTED]` before they are stored.
+- **Opt-in remote access.** To let an agent on another machine or VM reach the bridge, set `{ "lan": true, "token": "your-code" }` in `~/.developer-companion/config.json`. Remote callers must then send that access code; callers on the same computer don't need it.
+- If you need an extra trusted web origin (for example a hosted viewer), list it in the `COMPANION_ALLOWED_ORIGINS` environment variable.
 
 ---
 
-## Frequently Asked Questions
+## Project layout
 
-**Q: Do I need to start multiple servers?**  
-No. Everything uses a single port (`5959`). Both sketches and browser logs talk to this single endpoint.
+| Folder | What lives there |
+| :--- | :--- |
+| `editor/` | The canvas editor: engine, tools, layers, effects, and the UI chrome in `editor/ui/`. |
+| `hover/` | The floating-window content scripts. |
+| `overlay/` | The GitHub dashboard. |
+| `logs/` | The log viewer and settings page. |
+| `lib/` | Extension background modules (log capture, allowlist, commands, hover manager). |
+| `server/` | The local bridge and MCP server. |
+| `background.js` | The extension's service worker. |
 
-**Q: Does it send my data to the cloud?**  
-No. All logs and sketches are stored 100% locally on your machine in a local SQLite file (`logs.db`).
+---
 
-**Q: What domains does the logger capture?**  
-By default, it automatically captures `localhost` and `127.0.0.1`. You can add more domains in the extension settings page.
+## FAQ
+
+**Do I need more than one server?** No. One process on port `5959` handles sketches, logs, repos and the MCP connection.
+
+**Does it work with agents running in a VM?** Yes. Share a folder with the VM and set the agent path, or enable remote access as described above.
+
+**Which sites are captured?** `localhost` and `127.0.0.1` by default. You choose any others.
 
 ---
 
 ## License
 
-MIT License. Designed and built by [Kashyap](https://github.com/kashyapgithub).
-
-## Hover over tabs
-
-In the editor toolbar, click **Hover over tabs**. Chrome asks once for permission to show over web pages. After that, every http(s) tab gets a small floating bubble:
-
-- **Click** the bubble to open the editor in a floating window over the page.
-- **Drag** the header (or the bubble) to move it anywhere; drag the bottom-right corner to resize.
-- **—** minimizes back to the bubble, **↗** opens the full-tab editor, **✕** hides it on that page until reload.
-- Your canvas is autosaved and shared between tabs, so it follows you as you switch tabs.
-
-Click the button again to turn hover mode off. Code lives in `hover/` (content scripts) and `lib/hover-manager.js` (background).
-Note: a few sites with a strict Content-Security-Policy (`frame-src`) may refuse to show the floating editor.
+MIT. Designed and built by [Kashyap](https://github.com/kashyapgithub).

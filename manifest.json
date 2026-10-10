@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Developer Companion",
   "version": "1.0.0",
-  "description": "All-in-one developer companion: UI Sketch Canvas, GitHub Repo Dashboard, and Browser Log Streamer with unified MCP Agent bridge.",
+  "description": "Show your coding agent what you want and what broke: sketch UI, send browser logs, and share your repos through one local connection.",
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",

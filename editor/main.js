@@ -21,6 +21,7 @@ import { topHit } from "./modules/selection.js";
 import { wireScreenshotMenu } from "./modules/screenshotMenu.js";
 import { wireHoverToggle } from "./modules/hoverToggle.js";
 import { createAutosave } from "./modules/autosave.js";
+import { wireSideTabs, wirePopover } from "./modules/sidePanel.js";
 import { applyEmbeddedClass } from "./modules/embedMode.js";
 
 applyEmbeddedClass(); // before first paint, so the floating-window layout doesn't flash
@@ -113,6 +114,8 @@ dock = createDock({
 // Draft autosave + cross-tab sync (needed by the hover window), then the hover button.
 autosave = createAutosave({ controller });
 autosave.restore();
+wireSideTabs(document.getElementById("side"));
+wirePopover({ buttonEl: document.getElementById("agent-settings-btn"), popoverEl: document.getElementById("agent-popover") });
 wireHoverToggle({ buttonEl: document.getElementById("hover-mode-btn") });
 
 engine.scheduleRender(controller.state);
@@ -132,7 +135,7 @@ palette = createActionsPalette({
     controller, engine,
     ui: {
       pickImage: () => imageImport.pick(),
-      toggle: (name) => togglePanel(name === "layers" ? "layers" : "effects-panel"),
+      toggle: (name) => togglePanel(name === "layers" ? "side" : "effects-panel"),
       setMode: (mode) => dock.setMode(mode),
       exportNow: () => document.getElementById("export-btn").click(),
     },

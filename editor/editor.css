@@ -314,7 +314,7 @@ body { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
 .insp-code { margin: 0; padding: 10px; overflow-x: auto; white-space: pre; background: #17181c; border: 1px solid var(--panel-border); border-radius: 6px; color: #cfe0ff; font: 11px/1.5 ui-monospace, Menlo, Consolas, monospace; user-select: text; }
 .insp-copy { margin-left: auto; padding: 2px 8px; border: 1px solid #3a3b44; border-radius: 4px; background: #26272e; color: var(--text); font-size: 11px; cursor: pointer; text-transform: none; letter-spacing: 0; }
 
-body[data-mode="dev"] #toolbar .tool-group:not(.export-group):not(#zoom-group) { display: none; }
+body[data-mode="dev"] #history-group { display: none; }
 body[data-mode="dev"] .dock-group:not([data-group="move"]):not([data-group="comment"]) { display: none; }
 body[data-mode="dev"] #effects-panel { display: none; }
 

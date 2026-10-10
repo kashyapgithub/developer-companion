@@ -133,7 +133,6 @@ function wireArrangeControls(controller) {
   $("group-btn").addEventListener("click", () => controller.groupSelected());
   $("ungroup-btn").addEventListener("click", () => controller.ungroupSelected());
   $("delete-btn").addEventListener("click", () => controller.deleteSelected());
-  $("layers-toggle").addEventListener("click", () => $("layers").classList.toggle("hidden"));
 }
 
 function wireHistoryButtons(controller) {

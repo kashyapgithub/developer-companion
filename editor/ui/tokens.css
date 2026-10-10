@@ -1,0 +1,48 @@
+/* ==========================================================================
+   ui/tokens.css — design tokens for the editor chrome (top bar + side panel).
+   Loaded after editor.css; redefines the old variable names so every older
+   rule picks up the new look, and adds a few new ones.
+
+   Direction: a graphite workbench. The canvas is the bright thing; the chrome
+   stays low-contrast and quiet. Amber is reserved for ONE job — sending the
+   sketch to your agent — so that button is always the loudest thing on screen.
+   ========================================================================== */
+
+:root {
+  /* surfaces, darkest to lightest */
+  --ink: #131419;            /* page behind everything */
+  --panel: #1a1b22;          /* top bar + side panel */
+  --raised: #23242d;         /* buttons, inputs */
+  --raised-hover: #2c2e39;
+  --panel-border: #2a2c36;   /* hairlines */
+
+  /* text */
+  --text: #e8e9ef;
+  --text-dim: #8a8d9b;
+
+  /* selection / focus (matches the canvas selection handles) */
+  --accent: #4f6bff;
+  --accent-soft: rgba(79, 107, 255, 0.16);
+
+  /* the one loud color: send to agent */
+  --send: #ffb340;
+  --send-ink: #2a1a00;
+  --send-hover: #ffc260;
+
+  --danger: #e5645a;
+  --ok: #5fd08a;
+
+  --radius: 7px;
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+/* Keyboard focus must always be visible. */
+#toolbar :focus-visible,
+#side :focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #toolbar *, #side * { transition: none !important; }
+}
