@@ -40,7 +40,6 @@ const hp=await b.newPage(); await hp.setViewport({width:1280,height:800}); await
 for (const f of ["config","state","drag","dom","main"]) await hp.addScriptTag({url:`${B}/ext/hover/hover-${f}.js`});
 await new Promise(r=>setTimeout(r,400));
 await hp.evaluate(()=>chrome.storage.local.set({dcRecording:{active:true,startedAt:new Date(Date.now()-125000).toISOString(),counts:{},sites:["localhost"]}})); await new Promise(r=>setTimeout(r,700));
-await hp.screenshot({path:"bubble-rec.png",clip:{x:1100,y:620,width:180,height:180}});
 const herrs=[]; hp.on("pageerror",e=>herrs.push(String(e)));
 await hp.evaluate(()=>chrome.storage.local.set({dcRecording:{active:false,counts:{},sites:[]}})); await new Promise(r=>setTimeout(r,300));
 await b.close(); for(const [c,n] of R) console.log((c?"PASS ":"FAIL ")+n);
