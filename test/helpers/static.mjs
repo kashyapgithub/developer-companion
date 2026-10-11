@@ -1,0 +1,29 @@
+/**
+ * static.mjs — a tiny web server for the browser tests.
+ *
+ * Serves a demo page at /page (a button, a password field, a tall body) and
+ * the repo's own files, so the editor can also be opened as a plain page.
+ * Safe to start more than once: if the port is taken, it assumes another
+ * test already started it.
+ */
+import http from "node:http"; import fs from "node:fs"; import path from "node:path";
+import { ROOT } from "./paths.mjs";
+
+export const STATIC_PORT = 8777;
+const TYPES = { ".js": "text/javascript", ".html": "text/html", ".css": "text/css", ".png": "image/png", ".json": "application/json", ".svg": "image/svg+xml" };
+const DEMO_PAGE = "<html><body style='height:2000px'><h1>Host page</h1><div style='padding:20px'><button id='save' class='primary' style='background:#e8590c;color:#fff;border:0;border-radius:8px;padding:14px 28px;font:600 18px system-ui;box-shadow:0 4px 12px rgba(0,0,0,.25)'>Save changes</button><input type=password value='hunter2' id='pw'></div></body></html>";
+
+export function startStatic() {
+  const server = http.createServer((req, res) => {
+    const { pathname } = new URL(req.url, "http://x");
+    if (pathname === "/page") { res.setHeader("content-type", "text/html"); return res.end(DEMO_PAGE); }
+    const file = path.join(ROOT, pathname.replace(/^\/ext\//, "/"));
+    if (!file.startsWith(ROOT) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) { res.statusCode = 404; return res.end("not found"); }
+    res.setHeader("content-type", TYPES[path.extname(file)] || "application/octet-stream");
+    res.end(fs.readFileSync(file));
+  });
+  server.on("error", () => {}); // port already served by an earlier call
+  server.listen(STATIC_PORT, "127.0.0.1");
+  server.unref();               // never keeps a finished test alive
+  return server;
+}

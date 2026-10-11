@@ -1,4 +1,4 @@
-import {launch} from "./ext-launch.mjs";
+import {launch} from "../helpers/launch.mjs";
 const wait=ms=>new Promise(r=>setTimeout(r,ms)); const out=[]; const t=(n,c,x="")=>out.push([c,n+(x?" — "+x:"")]);
 const {browser,id}=await launch();
 const page=await browser.newPage(); await page.setViewport({width:1000,height:700}); await page.goto("http://127.0.0.1:8777/page");
@@ -7,7 +7,7 @@ await ed.setViewport({width:1280,height:800}); await ed.goto(`chrome-extension:/
 // a solid red 300x200 rect at world (0,0)
 await ed.evaluate(async()=>{const m=await import("./modules/shapes.js"); window.__uiSketch.controller.addShape(m.createShape("rect",{x:0,y:0,w:300,h:200,fill:"#ff0000",stroke:"#ff0000"}))});
 await ed.click("#overlay-btn"); await wait(1500);
-const label=await ed.$eval("#overlay-btn .lbl",e=>e.textContent); t("button shows on-state", label==="Overlay: on", label);
+const pressed=await ed.$eval("#overlay-btn",e=>e.classList.contains("active")); t("button shows on-state", pressed);
 // capture the page via the extension and look at pixels
 const shot=await ed.evaluate(()=>chrome.runtime.sendMessage({type:"CAPTURE_TAB",maxWidth:1000}));
 const px=await ed.evaluate(async(u)=>{const i=new Image();i.src=u;await i.decode();const c=document.createElement("canvas");c.width=i.width;c.height=i.height;const g=c.getContext("2d");g.drawImage(i,0,0);

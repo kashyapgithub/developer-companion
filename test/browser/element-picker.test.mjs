@@ -1,0 +1,35 @@
+import {launch} from "../helpers/launch.mjs";
+const {browser,id}=await launch(); const R=[]; const t=(n,c,x="")=>R.push([c,n+(x?" — "+x:"")]);
+const page=await browser.newPage(); await page.setViewport({width:1000,height:700}); await page.goto("http://127.0.0.1:8777/page");
+const ed=await browser.newPage(); await ed.setViewport({width:1280,height:800}); const errs=[]; ed.on("pageerror",e=>errs.push(String(e)));
+await ed.goto(`chrome-extension://${id}/editor/editor.html`); await new Promise(r=>setTimeout(r,800));
+await page.bringToFront(); await new Promise(r=>setTimeout(r,300)); await ed.bringToFront(); await new Promise(r=>setTimeout(r,300));
+await ed.click("#screenshot-btn"); await ed.click('[data-shot="element"]'); await new Promise(r=>setTimeout(r,1200));
+t("picker overlay injected in page", await page.evaluate(()=>!!window.__dcPickerActive||document.documentElement.innerHTML.includes("crosshair")));
+const box=await (await page.$("#save")).boundingBox();
+await page.bringToFront();
+await page.mouse.move(box.x+box.width/2, box.y+box.height/2); await new Promise(r=>setTimeout(r,200));
+let clicked=await page.evaluate(()=>window.__clicked||false);
+await page.mouse.click(box.x+box.width/2, box.y+box.height/2); await new Promise(r=>setTimeout(r,2500));
+t("page button did NOT receive the click", !(await page.evaluate(()=>window.__clicked||false)));
+t("picker removed itself", await page.evaluate(()=>!window.__dcPickerActive));
+const shapes=await ed.evaluate(()=>window.__uiSketch.controller.state.shapes.filter(s=>s.type==="image").map(s=>({name:s.name,meta:s.meta,w:s.w,h:s.h})));
+t("one image shape added", shapes.length===1, JSON.stringify(shapes[0]||{}).slice(0,100));
+const m=shapes[0]?.meta||{};
+t("selector is #save", m.selector==="#save", m.selector);
+t("text captured", m.text==="Save changes", m.text);
+t("styles captured (bg color, radius)", /232, 89, 12/.test(m.styles?.["background-color"]||"") && m.styles?.["border-radius"]==="8px", JSON.stringify([m.styles?.["background-color"],m.styles?.["border-radius"]]));
+t("html captured", /<button[^>]*id="save"/.test(m.html||""));
+t("layer name", shapes[0]?.name==="button — Save changes", shapes[0]?.name);
+t("crop is element-sized (not full page)", shapes[0] && shapes[0].w<400, `${shapes[0]?.w}x${shapes[0]?.h}`);
+t("editor tab is active again", await ed.evaluate(()=>document.visibilityState)==="visible");
+// privacy: password value stripped
+await ed.click("#screenshot-btn"); await ed.click('[data-shot="element"]'); await new Promise(r=>setTimeout(r,1000)); await page.bringToFront();
+const pb=await (await page.$("#pw")).boundingBox(); await page.mouse.click(pb.x+pb.width/2,pb.y+pb.height/2); await new Promise(r=>setTimeout(r,2500));
+const pw=(await ed.evaluate(()=>window.__uiSketch.controller.state.shapes.filter(s=>s.type==="image").map(s=>s.meta)))[1];
+t("password value not leaked in html", pw && !/hunter2/.test(JSON.stringify(pw)), (pw?.html||"").slice(0,90));
+// cancel with Esc
+await ed.bringToFront(); await ed.click("#screenshot-btn"); await ed.click('[data-shot="element"]'); await new Promise(r=>setTimeout(r,1000)); await page.bringToFront(); await page.keyboard.press("Escape"); await new Promise(r=>setTimeout(r,1000));
+t("Esc cancels, no extra shape", (await ed.evaluate(()=>window.__uiSketch.controller.state.shapes.filter(s=>s.type==="image").length))===2);
+t("no editor page errors", errs.length===0, errs.join("|"));
+await browser.close(); for(const [c,n] of R) console.log((c?"PASS ":"FAIL ")+n);

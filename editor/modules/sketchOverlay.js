@@ -10,6 +10,7 @@ import { exportScope } from "./exportScope.js";
 
 const PAGE_ORIGINS = ["http://*/*", "https://*/*"];
 const DEFAULT_OPACITY = 0.5;
+const DEFAULT_TITLE = "Overlay: lay the sketch over your running page, semi-transparent, to compare design and reality";
 
 /** @param {{buttonEl:HTMLElement, controller:object, engine:object, onToast?:(msg:string,type?:string)=>void}} deps */
 export function wireSketchOverlay({ buttonEl, controller, engine, onToast = () => {} }) {
@@ -20,7 +21,7 @@ export function wireSketchOverlay({ buttonEl, controller, engine, onToast = () =
   const paint = () => {
     buttonEl.classList.toggle("active", shown);
     buttonEl.setAttribute("aria-pressed", String(shown));
-    buttonEl.querySelector(".lbl").textContent = shown ? "Overlay: on" : "Overlay";
+    buttonEl.title = shown ? "Overlay is on — click to remove it from the page" : DEFAULT_TITLE;
   };
 
   /** Transparent PNG of what the agent would receive (selected frame, else everything). */

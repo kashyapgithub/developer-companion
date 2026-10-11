@@ -1,4 +1,4 @@
-import {launch} from "./ext-launch.mjs"; import fs from "node:fs"; import os from "node:os"; import path from "node:path";
+import {launch} from "../helpers/launch.mjs"; import fs from "node:fs"; import os from "node:os"; import path from "node:path";
 const R="/home/claude/developer-companion";
 const {Client}=await import(R+"/server/node_modules/@modelcontextprotocol/sdk/dist/esm/client/index.js");
 const {StdioClientTransport}=await import(R+"/server/node_modules/@modelcontextprotocol/sdk/dist/esm/client/stdio.js");

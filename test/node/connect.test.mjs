@@ -7,7 +7,7 @@ import fs from "node:fs"; import os from "node:os"; import path from "node:path"
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
-const server = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "server");
+const server = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "server");
 const home = fs.mkdtempSync(path.join(os.tmpdir(), "dc-home-"));
 const env = { ...process.env, HOME: home, USERPROFILE: home, PATH: path.dirname(process.execPath) }; // PATH without a real `claude`
 const run = () => execFileSync(process.execPath, [path.join(server, "connect.js")], { env, encoding: "utf8" });

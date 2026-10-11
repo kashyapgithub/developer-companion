@@ -1,0 +1,15 @@
+{
+  "name": "developer-companion",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Chrome extension + local MCP bridge: show your coding agent what you want and what broke.",
+  "scripts": {
+    "test": "node test/run.mjs",
+    "test:node": "node test/run.mjs node",
+    "test:browser": "node test/run.mjs browser"
+  },
+  "devDependencies": {
+    "puppeteer-core": "^24.0.0"
+  }
+}

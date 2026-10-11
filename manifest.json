@@ -47,13 +47,12 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "overlay/*",
-        "logs/*",
         "editor/*",
         "icons/*"
       ],
       "matches": [
-        "<all_urls>"
+        "http://*/*",
+        "https://*/*"
       ]
     }
   ]

@@ -1,0 +1,40 @@
+# CI: fast tests gate every push; the real-Chromium extension tests run alongside.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  node-tests:
+    name: Server and recording tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci --prefix server
+      - run: npm ci
+        env:
+          PUPPETEER_SKIP_DOWNLOAD: "1"
+      - run: npm run test:node
+
+  browser-tests:
+    name: Extension tests (real Chromium)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci --prefix server
+      - run: npm ci
+        env:
+          PUPPETEER_SKIP_DOWNLOAD: "1"
+      # Branded Chrome 137+ ignores --load-extension, so use Playwright's Chromium.
+      - run: npx --yes playwright@1.49.1 install --with-deps chromium
+      - name: Find Chromium
+        run: echo "CHROMIUM_PATH=$(find ~/.cache/ms-playwright -path '*chrome-linux/chrome' | head -1)" >> "$GITHUB_ENV"
+      - run: npm run test:browser

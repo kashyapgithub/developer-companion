@@ -151,8 +151,23 @@ node server/query_logs.js groups
 | `overlay/` | The GitHub dashboard. |
 | `logs/` | The log viewer and settings page. |
 | `lib/` | Extension background modules (log capture, allowlist, commands, hover manager). |
-| `server/` | The local bridge and MCP server. |
+| `server/` | The local bridge and MCP server, plus the installer, agent-connect and LAN tools. |
+| `picker/`, `sketch-overlay/` | Scripts injected into a page for element picking and the sketch overlay. |
+| `test/` | Tests: `node/` (fast) and `browser/` (real Chromium with the real extension). |
 | `background.js` | The extension's service worker. |
+
+---
+
+## Development
+
+```bash
+npm install            # test tooling (puppeteer-core)
+npm run test:node      # fast tests: recording, agent connect
+npm run test:browser   # loads the real extension in Chromium (set CHROMIUM_PATH if needed)
+npm test               # everything
+```
+
+GitHub Actions runs both on every push.
 
 ---
 
