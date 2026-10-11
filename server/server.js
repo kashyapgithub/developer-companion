@@ -217,6 +217,20 @@ function startHttpReceiver() {
   });
 }
 
+/**
+ * Embedded screenshots are megabytes of base64 — useless as text and ruinous for
+ * an agent's context. The preview PNG already shows them, so the shape list keeps
+ * only a marker (plus everything else: names, positions, meta such as a picked
+ * element's HTML and styles).
+ */
+function withoutImageData(doc) {
+  if (!doc || !Array.isArray(doc.shapes)) return doc;
+  const shapes = doc.shapes.map((s) =>
+    typeof s.src === "string" && s.src.startsWith("data:") ? { ...s, src: "[embedded image — see the preview PNG]" } : s
+  );
+  return { ...doc, shapes };
+}
+
 function readJsonBody(req, res, callback) {
   let body = "";
   let size = 0;
@@ -282,7 +296,7 @@ function startMcpServer() {
           ],
         };
       }
-      const content = [{ type: "text", text: JSON.stringify(sketch.json, null, 2) }];
+      const content = [{ type: "text", text: JSON.stringify(withoutImageData(sketch.json), null, 2) }];
       if (sketch.pngBase64) {
         content.push({ type: "image", data: sketch.pngBase64, mimeType: "image/png" });
       }

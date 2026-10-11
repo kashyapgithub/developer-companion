@@ -18,6 +18,7 @@ import {
 } from "./lib/debugger-capture.js";
 import { logSender } from "./lib/log-sender.js";
 import { createCommandPoller } from "./lib/commands.js";
+import { startPicking, handlePicked, handleCancelled } from "./lib/element-picker.js";
 import { captureTab, trackWebTabs } from "./lib/tab-capture.js";
 import { captureForRecording, restoreRecording, startRecording, stopRecording, retrySend, addMarker, getRecordingState } from "./lib/recording.js";
 import { setHoverEnabled, isHoverEnabled, repairHoverRegistration } from "./lib/hover-manager.js";
@@ -284,6 +285,20 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message.type === "CAPTURE_TAB") {
     captureTab({ senderTab: _sender?.tab, maxWidth: message.maxWidth }).then(sendResponse);
     return true;
+  }
+
+  // Point at an element on a page (see lib/element-picker.js).
+  if (message.type === "PICK_ELEMENT") {
+    startPicking({ requestId: message.requestId, senderTab: _sender?.tab }).then(sendResponse);
+    return true;
+  }
+  if (message.type === "ELEMENT_PICKED") {
+    handlePicked(message.payload, _sender?.tab);
+    return;
+  }
+  if (message.type === "ELEMENT_PICK_CANCEL") {
+    handleCancelled();
+    return;
   }
 
   // Recording: Record -> test your app -> Stop & send (see lib/recording.js).

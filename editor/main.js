@@ -21,6 +21,7 @@ import { topHit } from "./modules/selection.js";
 import { wireScreenshotMenu } from "./modules/screenshotMenu.js";
 import { wireHoverToggle } from "./modules/hoverToggle.js";
 import { createAutosave } from "./modules/autosave.js";
+import { createElementPicker } from "./modules/elementPicker.js";
 import { wireSideTabs, wirePopover } from "./modules/sidePanel.js";
 import { wireRecorder } from "./modules/recorder.js";
 import { applyEmbeddedClass } from "./modules/embedMode.js";
@@ -97,11 +98,14 @@ imageImport = wireImageImport({
   canvasWrapEl, canvasEl, controller, viewport: engine, pickerEl: document.getElementById("image-picker"),
 });
 
+const shotStatus = document.getElementById("screenshot-status");
+const elementPicker = createElementPicker({ imageImport, say: (t) => { shotStatus.textContent = t; clearTimeout(shotStatus._t); shotStatus._t = setTimeout(() => { shotStatus.textContent = ""; }, 5000); } });
 wireScreenshotMenu({
   buttonEl: document.getElementById("screenshot-btn"),
   menuEl: document.getElementById("screenshot-menu"),
   statusEl: document.getElementById("screenshot-status"),
   imageImport,
+  elementPicker,
 });
 
 dock = createDock({

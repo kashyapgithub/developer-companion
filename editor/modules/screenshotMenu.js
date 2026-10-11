@@ -6,6 +6,7 @@
  *   Paste from clipboard   reads the clipboard now (same as Ctrl/Cmd+V)
  *   Upload image…          file picker
  *   Capture this tab       screenshots the web page you were just on (no picker)
+ *   Pick an element…       point at part of a page: screenshot + HTML + styles
  *   Capture screen/window… browser's screen-share picker, grabs one frame
  *
  * Shortcut Ctrl/Cmd+Shift+K: paste from the clipboard if it holds an image,
@@ -35,7 +36,7 @@ async function captureCurrentTab(imageImport) {
   return added ? "added" : "Couldn't add the capture to the canvas.";
 }
 
-export function wireScreenshotMenu({ buttonEl, menuEl, statusEl, imageImport }) {
+export function wireScreenshotMenu({ buttonEl, menuEl, statusEl, imageImport, elementPicker }) {
   let statusTimer = null;
   const say = (text) => {
     statusEl.textContent = text;
@@ -49,6 +50,7 @@ export function wireScreenshotMenu({ buttonEl, menuEl, statusEl, imageImport }) 
   async function run(action) {
     close();
     if (action === "upload") { imageImport.pick(); return; }
+    if (action === "element") { const r = await elementPicker.start(); say(r === "started" ? "Click an element on the page — Esc cancels." : r); return; }
     const result = action === "paste" ? await imageImport.pasteFromClipboard()
       : action === "tab" ? await captureCurrentTab(imageImport)
       : await imageImport.captureScreen();
