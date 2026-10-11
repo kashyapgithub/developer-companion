@@ -8,6 +8,7 @@
  */
 
 import http from "node:http";
+import { EventEmitter } from "node:events";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
@@ -22,6 +23,8 @@ import {
   readGitHubContext,
   insertCommand,
   getPendingCommands,
+  claimPendingCommands,
+  getCommand,
   updateCommand,
   getSummaryStats,
   latestRecordingId,
@@ -35,6 +38,10 @@ const PORT = Number(process.env.PORT) || Number(process.env.LOG_SERVER_PORT) || 
 const MAX_BODY_BYTES = 60 * 1024 * 1024; // 60MB for large PNG wireframes
 
 const config = readConfig();
+
+/** Wakes long-polling extensions the moment a command is queued. */
+const commandBus = new EventEmitter();
+commandBus.setMaxListeners(50);
 const HOST = config.lan ? "0.0.0.0" : "127.0.0.1";
 
 const LOOPBACK = new Set(["127.0.0.1", "::1", "::ffff:127.0.0.1"]);
@@ -177,6 +184,26 @@ function startHttpReceiver() {
       }
     }
 
+    // Long-poll: the extension holds this open; it returns as soon as a command exists
+    // (or after ~20s with an empty list, and the extension simply asks again).
+    if (pathname === "/commands/wait" && req.method === "GET") {
+      const app = url.searchParams.get("app") || undefined;
+      const waitMs = Math.min(Number(url.searchParams.get("timeout")) || 20000, 25000);
+      const ready = claimPendingCommands(app);
+      if (ready.length) { respondJson(res, 200, { commands: ready }); return; }
+
+      const finish = () => {
+        clearTimeout(timer);
+        commandBus.off("new", onNew);
+        if (!res.writableEnded) respondJson(res, 200, { commands: claimPendingCommands(app) });
+      };
+      const onNew = () => finish();
+      const timer = setTimeout(finish, waitMs);
+      commandBus.on("new", onNew);
+      req.on("close", () => { clearTimeout(timer); commandBus.off("new", onNew); });
+      return;
+    }
+
     // Commands endpoint
     if (pathname === "/commands/pending" && req.method === "GET") {
       const app = url.searchParams.get("app") || undefined;
@@ -187,6 +214,7 @@ function startHttpReceiver() {
     if (pathname === "/commands" && req.method === "POST") {
       readJsonBody(req, res, (body) => {
         const result = insertCommand(body);
+        commandBus.emit("new");
         respondJson(res, 200, result);
       });
       return;
@@ -223,6 +251,17 @@ function startHttpReceiver() {
  * only a marker (plus everything else: names, positions, meta such as a picked
  * element's HTML and styles).
  */
+/** Polls until the extension reports the command finished, or `ms` pass (null on timeout). */
+async function waitForCommand(id, ms) {
+  const deadline = Date.now() + ms;
+  while (Date.now() < deadline) {
+    const cmd = getCommand(id);
+    if (cmd && (cmd.status === "done" || cmd.status === "failed" || cmd.status === "completed")) return cmd;
+    await new Promise((r) => setTimeout(r, 150));
+  }
+  return null;
+}
+
 function withoutImageData(doc) {
   if (!doc || !Array.isArray(doc.shapes)) return doc;
   const shapes = doc.shapes.map((s) =>
@@ -409,21 +448,54 @@ function startMcpServer() {
   // Tool 4: send_browser_command
   server.tool(
     "send_browser_command",
-    "Sends an automated command or evaluation to the user's active browser via Developer Companion " +
-      "(e.g., 'reload', 'localstorage_snapshot', or custom command).",
+    "Sends a command to the user's browser through Developer Companion. Supported: " +
+      "'flush' (send buffered logs now), 'status' (which sites are being captured), " +
+      "'attach' / 'detach' (start/stop capturing a site, needs app_name), 'localstorage_snapshot' (needs app_name). " +
+      "To SEE the running app, use capture_tab instead.",
     {
-      command: z.string().describe("The command name: 'reload', 'localstorage_snapshot', etc."),
-      app_name: z.string().optional().describe("Target application/domain label"),
-      payload: z.record(z.any()).optional().describe("Command payload parameters"),
+      command: z.string().describe("One of: flush, status, attach, detach, localstorage_snapshot"),
+      app_name: z.string().optional().describe("Target site label, e.g. 'localhost'"),
+      payload: z.record(z.any()).optional().describe("Command parameters"),
     },
     async ({ command, app_name, payload }) => {
       const res = insertCommand({ app_name, command, payload });
+      commandBus.emit("new");
+      const done = await waitForCommand(res.id, 15000);
+      const text = done
+        ? JSON.stringify({ status: done.status, result: done.result }, null, 2)
+        : `Command queued (ID: ${res.id}) but the browser hasn't answered yet. Is Chrome open with the extension?`;
+      return { content: [{ type: "text", text }] };
+    }
+  );
+
+  // Tool 4b: capture_tab
+  server.tool(
+    "capture_tab",
+    "Takes a screenshot of the user's running web app (a tab on an allowed site such as localhost) and " +
+      "returns it as an image, plus the page URL and title. Use it after changing UI code to check how the " +
+      "result actually looks, or to compare it with the user's sketch.",
+    {
+      url_contains: z.string().optional().describe("Only capture a tab whose URL contains this text, e.g. ':3000' or '/settings'"),
+      max_width: z.number().optional().describe("Shrink the screenshot to at most this many pixels wide (default 1280)"),
+    },
+    async ({ url_contains, max_width = 1280 }) => {
+      const { id } = insertCommand({ command: "capture_tab", payload: { url_contains, max_width } });
+      commandBus.emit("new");
+      const done = await waitForCommand(id, 30000);
+      if (!done) {
+        return { content: [{ type: "text", text: "Timed out. Make sure Chrome is open with the Developer Companion extension and the agent server is reachable from it." }] };
+      }
+      const r = done.result || {};
+      if (done.status !== "done" || !r.dataUrl) {
+        return { content: [{ type: "text", text: `Couldn't capture: ${r.error || "unknown error"}` }] };
+      }
+      // Keep the database small: the image goes to the agent, not into storage.
+      updateCommand(id, "done", { url: r.url, title: r.title, captured: true });
+      const [, mimeType, data] = /^data:([^;]+);base64,(.*)$/.exec(r.dataUrl) || [];
       return {
         content: [
-          {
-            type: "text",
-            text: `Command queued (ID: ${res.id}). It will be executed on the browser's next poll cycle.`,
-          },
+          { type: "text", text: JSON.stringify({ url: r.url, title: r.title, width: r.width, height: r.height }) },
+          { type: "image", data, mimeType },
         ],
       };
     }

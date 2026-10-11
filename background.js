@@ -17,7 +17,7 @@ import {
   createEventHandler,
 } from "./lib/debugger-capture.js";
 import { logSender } from "./lib/log-sender.js";
-import { createCommandPoller } from "./lib/commands.js";
+import { startCommandLoop } from "./lib/commands.js";
 import { startPicking, handlePicked, handleCancelled } from "./lib/element-picker.js";
 import { captureTab, trackWebTabs } from "./lib/tab-capture.js";
 import { captureForRecording, restoreRecording, startRecording, stopRecording, retrySend, addMarker, getRecordingState } from "./lib/recording.js";
@@ -220,18 +220,20 @@ async function attachOpenAllowlistedTabs() {
   }
 }
 
-const pollAndExecuteCommands = createCommandPoller({
+const commandDeps = {
   findTabIdByHostname: findTabIdByAppName,
   getAttachedHostnames: getAttachedAppNames,
-});
+};
+startCommandLoop(commandDeps);
 
 repairHoverRegistration().catch(() => {});
 restoreRecording().catch(() => {});
 trackWebTabs();
 
+// Restart the command loop if the worker was recycled (no-op while it is running).
 chrome.alarms.create("poll-commands", { periodInMinutes: 0.5 });
 chrome.alarms.onAlarm.addListener((alarm) => {
-  if (alarm.name === "poll-commands") pollAndExecuteCommands();
+  if (alarm.name === "poll-commands") startCommandLoop(commandDeps);
 });
 
 // ---------------------------------------------------------------------------

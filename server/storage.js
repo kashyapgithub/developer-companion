@@ -351,6 +351,24 @@ export function getPendingCommands(appName) {
   });
 }
 
+export function getCommand(id) {
+  const row = getDb().prepare("SELECT * FROM commands WHERE id = ?").get(id);
+  if (!row) return null;
+  let result = null;
+  try { result = row.result ? JSON.parse(row.result) : null; } catch { result = row.result; }
+  return { ...row, result };
+}
+
+/**
+ * Hands pending commands to the extension AND marks them 'running' in one step,
+ * so a second poll can never receive (and execute) the same command twice.
+ */
+export function claimPendingCommands(appName) {
+  const pending = getPendingCommands(appName);
+  const mark = getDb().prepare("UPDATE commands SET status = 'running' WHERE id = ? AND status = 'pending'");
+  return pending.filter((c) => mark.run(c.id).changes > 0);
+}
+
 export function updateCommand(id, status, result) {
   const db = getDb();
   const now = new Date().toISOString();
