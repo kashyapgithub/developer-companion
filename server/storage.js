@@ -147,6 +147,38 @@ export function readGitHubContext() {
 // ---------------------------------------------------------------------------
 // Logs Storage & Queries
 // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Recording screenshots
+// ---------------------------------------------------------------------------
+/** Where a recording's screenshots live: <store>/shots/<session>/. */
+export function shotsDir(sessionId) {
+  return path.join(getStoreDir(), "shots", String(sessionId).replace(/[^\w.-]/g, "_"));
+}
+
+/**
+ * Screenshots arrive as data URLs inside a log row's context. Keeping them in
+ * the SQLite row would bloat every query, so they are written to disk and the
+ * row keeps only `screenshot_file` (a path relative to the shots folder).
+ */
+function stashScreenshot(ctx, sessionId) {
+  const m = /^data:image\/(jpeg|png);base64,(.+)$/s.exec(ctx?.screenshot || "");
+  if (!m || !sessionId) return ctx;
+  const dir = shotsDir(sessionId);
+  fs.mkdirSync(dir, { recursive: true });
+  const name = `${Date.now().toString(36)}-${fs.readdirSync(dir).length}.${m[1] === "jpeg" ? "jpg" : "png"}`;
+  fs.writeFileSync(path.join(dir, name), Buffer.from(m[2], "base64"));
+  const { screenshot, ...rest } = ctx;
+  return { ...rest, screenshot_file: name };
+}
+
+/** Reads one stored screenshot back as { data (base64), mimeType }, or null. */
+export function readScreenshot(sessionId, name) {
+  try {
+    const file = path.join(shotsDir(sessionId), path.basename(name));
+    return { data: fs.readFileSync(file).toString("base64"), mimeType: file.endsWith(".png") ? "image/png" : "image/jpeg" };
+  } catch { return null; }
+}
+
 export function insertLogs(rows) {
   const db = getDb();
   const list = Array.isArray(rows) ? rows : [rows];
@@ -165,7 +197,8 @@ export function insertLogs(rows) {
   `);
 
   for (const r of list) {
-    const ctx = typeof r.context === "object" ? JSON.stringify(r.context) : String(r.context || "{}");
+    const ctxObj = typeof r.context === "object" && r.context ? stashScreenshot(r.context, r.session_id) : r.context;
+    const ctx = typeof ctxObj === "object" ? JSON.stringify(ctxObj) : String(ctxObj || "{}");
     const tags = Array.isArray(r.tags) ? JSON.stringify(r.tags) : String(r.tags || "[]");
 
     insert.run(
@@ -307,7 +340,7 @@ export function summarizeRecording(sessionId) {
 export function queryRecording(sessionId, { verbosity = "problems", limit = 200 } = {}) {
   const where = verbosity === "all"
     ? "session_id = ?"
-    : "session_id = ? AND (level IN ('error','fatal','warn') OR tags LIKE '%\"marker\"%')";
+    : "session_id = ? AND (level IN ('error','fatal','warn') OR tags LIKE '%\"marker\"%' OR tags LIKE '%\"timeline\"%' OR tags LIKE '%\"screenshot\"%')";
   const rows = getDb().prepare(
     `SELECT * FROM logs WHERE ${where} ORDER BY id ASC LIMIT ?`
   ).all(sessionId, Math.min(Number(limit) || 200, 2000));

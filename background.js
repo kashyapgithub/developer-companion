@@ -20,7 +20,7 @@ import { logSender } from "./lib/log-sender.js";
 import { startCommandLoop } from "./lib/commands.js";
 import { startPicking, handlePicked, handleCancelled } from "./lib/element-picker.js";
 import { captureTab, trackWebTabs } from "./lib/tab-capture.js";
-import { captureForRecording, restoreRecording, startRecording, stopRecording, retrySend, addMarker, getRecordingState } from "./lib/recording.js";
+import { captureForRecording, restoreRecording, startRecording, stopRecording, retrySend, addMarker, getRecordingState, isRecording } from "./lib/recording.js";
 import { setHoverEnabled, isHoverEnabled, repairHoverRegistration } from "./lib/hover-manager.js";
 import { getForwardConfig, setForwardConfig, DEFAULT_FORWARD_CONFIG } from "./lib/forward-config.js";
 
@@ -152,6 +152,7 @@ const onDebuggerEvent = createEventHandler({
   getSessionId: (tabId) => tabSessions.get(tabId),
   recordLocal,
   getForwardConfig: () => forwardConfigCache,
+  isRecording,
 });
 chrome.debugger.onEvent.addListener(onDebuggerEvent);
 

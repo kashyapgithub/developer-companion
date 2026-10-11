@@ -30,6 +30,7 @@ import {
   latestRecordingId,
   summarizeRecording,
   queryRecording,
+  readScreenshot,
 } from "./storage.js";
 import { readConfig, codeMatches } from "./config.js";
 import { isOriginAllowed, isHostAllowed, applyCors } from "./guard.js";
@@ -262,6 +263,9 @@ async function waitForCommand(id, ms) {
   return null;
 }
 
+/** Most screenshots one get_latest_recording call sends back (each costs the agent tokens). */
+const MAX_SHOTS_RETURNED = 6;
+
 function withoutImageData(doc) {
   if (!doc || !Array.isArray(doc.shapes)) return doc;
   const shapes = doc.shapes.map((s) =>
@@ -397,7 +401,16 @@ function startMcpServer() {
         return { content: [{ type: "text", text: "No recording found. Ask the user to press Record in Developer Companion, reproduce the problem, then Stop & send." }] };
       }
       const rows = queryRecording(id, { verbosity, limit });
-      return { content: [{ type: "text", text: JSON.stringify({ summary, shown: rows.length, verbosity, rows }, null, 2) }] };
+      const shots = rows.filter((r) => r.context?.screenshot_file);
+      const content = [{ type: "text", text: JSON.stringify({ summary, shown: rows.length, verbosity, screenshots: shots.length, rows }, null, 2) }];
+      // Screenshots follow the text, each labelled so the agent knows what moment it shows.
+      for (const r of shots.slice(0, MAX_SHOTS_RETURNED)) {
+        const img = readScreenshot(id, r.context.screenshot_file);
+        if (!img) continue;
+        content.push({ type: "text", text: `Screenshot at ${r.created_at} — ${r.message}` });
+        content.push({ type: "image", ...img });
+      }
+      return { content };
     }
   );
 

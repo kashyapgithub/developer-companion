@@ -1,0 +1,34 @@
+import {launch} from "./ext-launch.mjs"; import fs from "node:fs"; import os from "node:os"; import path from "node:path";
+const R="/home/claude/developer-companion";
+const {Client}=await import(R+"/server/node_modules/@modelcontextprotocol/sdk/dist/esm/client/index.js");
+const {StdioClientTransport}=await import(R+"/server/node_modules/@modelcontextprotocol/sdk/dist/esm/client/stdio.js");
+const store=fs.mkdtempSync(path.join(os.tmpdir(),"dc-"));
+const client=new Client({name:"t",version:"1"});
+await client.connect(new StdioClientTransport({command:"node",args:[R+"/server/server.js"],env:{...process.env,PORT:"5983",STORE_DIR:store}}));
+const out=[]; const t=(n,c,x="")=>out.push([c,n+(x?" — "+x:"")]); const wait=ms=>new Promise(r=>setTimeout(r,ms));
+const {browser,id}=await launch();
+const page=await browser.newPage(); await page.setViewport({width:1000,height:700}); await page.goto("http://127.0.0.1:8777/page");
+const ed=await browser.newPage(); await ed.goto(`chrome-extension://${id}/editor/editor.html`); await wait(800);
+await ed.evaluate(()=>chrome.storage.local.set({serverUrl:"http://127.0.0.1:5983"}));
+const msg=async(m)=>{console.log("->",m.type);const v=await Promise.race([ed.evaluate((m)=>chrome.runtime.sendMessage(m),m),wait(15000).then(()=>({timeout:true}))]);console.log("<-",JSON.stringify(v).slice(0,120));return v};
+let r=await msg({type:"REC_START"}); t("recording starts", r?.ok, JSON.stringify(r).slice(0,100));
+await page.reload(); await wait(1200);               // tracker is installed on fresh documents
+await page.evaluate(()=>document.querySelector("#save").click()); await wait(300);
+await page.evaluate(()=>setTimeout(()=>{throw new Error("boom: save failed")},0)); await wait(1800);
+await page.evaluate(()=>setTimeout(()=>{throw new Error("boom: save failed")},0)); await wait(300); // repeat: no 2nd shot
+await page.bringToFront(); await msg({type:"REC_MARK"}); await wait(2000);
+await page.goto("http://127.0.0.1:8777/page?step=2"); await wait(1200);
+r=await msg({type:"REC_STOP"}); t("stop sent ok", r?.ok, JSON.stringify(r?.last||r).slice(0,160));
+const res=await client.callTool({name:"get_latest_recording",arguments:{}});
+const text=JSON.parse(res.content[0].text); const imgs=res.content.filter(c=>c.type==="image");
+const msgs=text.rows.map(x=>x.message);
+t("click in timeline", msgs.some(m=>/clicked button#save.*Save changes/.test(m)), msgs.filter(m=>/clicked/.test(m)).join("|"));
+t("navigation in timeline", msgs.some(m=>/Navigated to .*step=2/.test(m)));
+t("error + marker kept", msgs.some(m=>/boom/.test(m)) && msgs.some(m=>/Marker/.test(m)));
+t("screenshots returned as images", imgs.length===2 && imgs.every(i=>i.data.length>1500), `images=${imgs.length}, rows=${text.screenshots}`);
+t("one shot per distinct error (+1 marker)", text.screenshots===2);
+t("no base64 in text rows", !res.content[0].text.includes("base64"));
+t("no input values leaked", !res.content[0].text.includes("hunter2"));
+const files=fs.readdirSync(path.join(store,"shots")).flatMap(d=>fs.readdirSync(path.join(store,"shots",d))); t("shots on disk", files.length===2, files.join(","));
+await browser.close(); await client.close();
+for(const [c,n] of out) console.log((c?"PASS ":"FAIL ")+n); process.exit(0);

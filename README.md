@@ -97,8 +97,8 @@ Testing your app and something breaks? Press **Record logs** in the top bar, rep
 
 - A live timer and counters (`2 errors · 1 failed request`) show what's being captured. With **Hover over tabs** on, the page bubble turns red and shows the same timer, so you can stay on your app.
 - The flag button drops a marker ("the button did nothing here") into the timeline.
-- Recording captures everything: console output, exceptions, and every network request and response, not just errors.
-- On stop, the whole session goes to your agent in one piece. Ask it to *"check the latest recording"* (`get_latest_recording`): it gets a summary with repeated errors grouped, your markers, and the log lines in time order.
+- Recording captures everything: console output, exceptions, and every network request and response, not just errors. It also builds a timeline of where you navigated and what you clicked (never what you typed), and takes a small screenshot at each marker and the first time each error appears, so the agent sees what you saw.
+- On stop, the whole session goes to your agent in one piece. Ask it to *"check the latest recording"* (`get_latest_recording`): it gets a summary with repeated errors grouped, your markers, the timeline, the screenshots, and the log lines in time order.
 - If the agent server isn't running when you stop, the recording is kept and a **Retry** button appears.
 
 Only sites in your allowlist are recorded (`localhost` and `127.0.0.1` by default; add more in the extension's settings page). **Send logs** still sends whatever was captured recently, without a recording. The log viewer next to it lets you read the logs yourself.
@@ -113,7 +113,8 @@ Click **GitHub** to browse your repositories with language filters, search, tags
 | Tool | Use |
 | :--- | :--- |
 | `get_latest_sketch` | The sketch you just drew: shapes, layers, labels, coordinates, and a PNG preview. |
-| `get_latest_recording` | The session you just recorded: summary, grouped errors, markers, and timeline. |
+| `get_latest_recording` | The session you just recorded: summary, grouped errors, markers, timeline, and screenshots. |
+| `capture_tab` | A screenshot of your running app, so the agent can check its own UI changes. |
 | `get_browser_logs` | Recent console errors and failed network calls, without a recording. |
 | `get_github_repos` | Your repository catalog with tags and summaries. |
 | `send_browser_command` | Ask the browser to flush logs, attach to a tab, or report status. |
