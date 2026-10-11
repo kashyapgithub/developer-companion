@@ -83,6 +83,9 @@ Then tell your agent: *"Check the latest sketch."*
 
 Choose how the sketch travels with **Send via**: a local file you drop into a project folder, or the MCP server. The gear next to it holds the folder, the path your agent sees (useful for VMs and shared folders), and a button that copies a ready-made prompt for your agent.
 
+### Overlay your sketch on the live app
+Press **Overlay** to lay your sketch (or the frame you have selected) over the page you were just on, semi-transparent, so you can compare design and reality. The page stays clickable. A small bar on the page has an opacity slider, **Align** (drag the sketch into place) and ✕. Press Overlay again to remove it.
+
 ### Hover over tabs
 Click **Hover over tabs** in the top bar and Chrome asks once for permission to show over web pages. Every tab then gets a small bubble:
 

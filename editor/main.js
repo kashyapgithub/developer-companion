@@ -20,6 +20,7 @@ import { buildCommands, createActionsPalette } from "./modules/actions.js";
 import { topHit } from "./modules/selection.js";
 import { wireScreenshotMenu } from "./modules/screenshotMenu.js";
 import { wireHoverToggle } from "./modules/hoverToggle.js";
+import { wireSketchOverlay } from "./modules/sketchOverlay.js";
 import { createAutosave } from "./modules/autosave.js";
 import { createElementPicker } from "./modules/elementPicker.js";
 import { wireSideTabs, wirePopover } from "./modules/sidePanel.js";
@@ -123,6 +124,7 @@ wireSideTabs(document.getElementById("side"));
 wirePopover({ buttonEl: document.getElementById("agent-settings-btn"), popoverEl: document.getElementById("agent-popover") });
 wireRecorder();
 wireHoverToggle({ buttonEl: document.getElementById("hover-mode-btn") });
+wireSketchOverlay({ buttonEl: document.getElementById("overlay-btn"), controller, engine });
 
 engine.scheduleRender(controller.state);
 layers.update(controller.state);

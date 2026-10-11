@@ -18,6 +18,7 @@ import {
 } from "./lib/debugger-capture.js";
 import { logSender } from "./lib/log-sender.js";
 import { startCommandLoop } from "./lib/commands.js";
+import { showSketchOverlay, hideSketchOverlay } from "./lib/sketch-overlay.js";
 import { startPicking, handlePicked, handleCancelled } from "./lib/element-picker.js";
 import { captureTab, trackWebTabs } from "./lib/tab-capture.js";
 import { captureForRecording, restoreRecording, startRecording, stopRecording, retrySend, addMarker, getRecordingState, isRecording } from "./lib/recording.js";
@@ -287,6 +288,16 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   // Screenshot the page the user is working on (see lib/tab-capture.js).
   if (message.type === "CAPTURE_TAB") {
     captureTab({ senderTab: _sender?.tab, maxWidth: message.maxWidth }).then(sendResponse);
+    return true;
+  }
+
+  // Sketch laid over the live page (see lib/sketch-overlay.js).
+  if (message.type === "SKETCH_OVERLAY_SHOW") {
+    showSketchOverlay({ senderTab: _sender?.tab, ...message }).then(sendResponse);
+    return true;
+  }
+  if (message.type === "SKETCH_OVERLAY_HIDE") {
+    hideSketchOverlay({ senderTab: _sender?.tab }).then(sendResponse);
     return true;
   }
 
