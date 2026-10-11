@@ -18,6 +18,7 @@ import {
 } from "./lib/debugger-capture.js";
 import { logSender } from "./lib/log-sender.js";
 import { createCommandPoller } from "./lib/commands.js";
+import { captureTab, trackWebTabs } from "./lib/tab-capture.js";
 import { captureForRecording, restoreRecording, startRecording, stopRecording, retrySend, addMarker, getRecordingState } from "./lib/recording.js";
 import { setHoverEnabled, isHoverEnabled, repairHoverRegistration } from "./lib/hover-manager.js";
 import { getForwardConfig, setForwardConfig, DEFAULT_FORWARD_CONFIG } from "./lib/forward-config.js";
@@ -225,6 +226,7 @@ const pollAndExecuteCommands = createCommandPoller({
 
 repairHoverRegistration().catch(() => {});
 restoreRecording().catch(() => {});
+trackWebTabs();
 
 chrome.alarms.create("poll-commands", { periodInMinutes: 0.5 });
 chrome.alarms.onAlarm.addListener((alarm) => {
@@ -275,6 +277,12 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
   if (message.type === "HOVER_STATUS") {
     isHoverEnabled().then((enabled) => sendResponse({ enabled }));
+    return true;
+  }
+
+  // Screenshot the page the user is working on (see lib/tab-capture.js).
+  if (message.type === "CAPTURE_TAB") {
+    captureTab({ senderTab: _sender?.tab, maxWidth: message.maxWidth }).then(sendResponse);
     return true;
   }
 

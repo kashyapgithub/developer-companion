@@ -5,6 +5,7 @@
  *
  *   Paste from clipboard   reads the clipboard now (same as Ctrl/Cmd+V)
  *   Upload image…          file picker
+ *   Capture this tab       screenshots the web page you were just on (no picker)
  *   Capture screen/window… browser's screen-share picker, grabs one frame
  *
  * Shortcut Ctrl/Cmd+Shift+K: paste from the clipboard if it holds an image,
@@ -17,6 +18,22 @@ const MESSAGES = {
   cancelled: "Capture cancelled.",
   unsupported: "Screen capture isn't available here.",
 };
+
+const PAGE_ORIGINS = ["http://*/*", "https://*/*"];
+
+/** Asks the background to screenshot the current web page; resolves to "added" or an error message. */
+async function captureCurrentTab(imageImport) {
+  // Page access is granted once (same permission as Hover over tabs). Must be asked from the click.
+  if (!(await chrome.permissions.contains({ origins: PAGE_ORIGINS }))) {
+    if (!(await chrome.permissions.request({ origins: PAGE_ORIGINS }))) return "Capturing a tab needs permission to see web pages.";
+  }
+  const res = await chrome.runtime.sendMessage({ type: "CAPTURE_TAB" });
+  if (!res?.ok) return res?.error || "Couldn't capture the tab.";
+  let host = "";
+  try { host = new URL(res.url).host; } catch { /* keep empty */ }
+  const added = await imageImport.addDataUrl(res.dataUrl, { name: host ? `Tab: ${host}` : "Tab capture", meta: { kind: "tab-capture", url: res.url, title: res.title } });
+  return added ? "added" : "Couldn't add the capture to the canvas.";
+}
 
 export function wireScreenshotMenu({ buttonEl, menuEl, statusEl, imageImport }) {
   let statusTimer = null;
@@ -32,8 +49,10 @@ export function wireScreenshotMenu({ buttonEl, menuEl, statusEl, imageImport }) 
   async function run(action) {
     close();
     if (action === "upload") { imageImport.pick(); return; }
-    const result = action === "paste" ? await imageImport.pasteFromClipboard() : await imageImport.captureScreen();
-    if (result !== "added") say(MESSAGES[result] || "");
+    const result = action === "paste" ? await imageImport.pasteFromClipboard()
+      : action === "tab" ? await captureCurrentTab(imageImport)
+      : await imageImport.captureScreen();
+    if (result !== "added") say(MESSAGES[result] || result || "");
   }
 
   buttonEl.addEventListener("click", (e) => { e.stopPropagation(); menuEl.classList.contains("hidden") ? open() : close(); });

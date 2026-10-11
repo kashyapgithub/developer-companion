@@ -155,20 +155,37 @@ export function wireImageImport({ canvasWrapEl, canvasEl, controller, viewport, 
     const files = [...(fileList || [])].filter(f => f.type.startsWith("image/"));
     let { x, y } = origin;
     for (const file of files) {
-      try {
-        const { dataUrl, width, height } = await prepareImage(file);
-        // Size relative to the screen so the image is a sensible size at any zoom.
-        const worldMax = MAX_DISPLAY_PX / viewport.getScale();
-        const k = Math.min(1, worldMax / Math.max(width, height));
-        controller.addShape(createShape("image", { x, y, w: width * k, h: height * k, src: dataUrl }));
-      } catch (err) {
-        console.warn("Could not import image:", err);
-      }
+      await placeImage(file, x, y);
       x += 24; y += 24; // stagger multiple images
     }
   }
 
-  return { pick, pasteFromClipboard, captureScreen, importFiles };
+  /** Decodes, downsizes and drops one image on the canvas. `extra` is merged into the shape (name, meta…). */
+  async function placeImage(file, x, y, extra = {}) {
+    try {
+      const { dataUrl, width, height } = await prepareImage(file);
+      // Size relative to the screen so the image is a sensible size at any zoom.
+      const worldMax = MAX_DISPLAY_PX / viewport.getScale();
+      const k = Math.min(1, worldMax / Math.max(width, height));
+      controller.addShape(createShape("image", { x, y, w: width * k, h: height * k, src: dataUrl, ...extra }));
+      return true;
+    } catch (err) {
+      console.warn("Could not import image:", err);
+      return false;
+    }
+  }
+
+  /**
+   * Adds an image given as a data URL (tab captures, element crops). `extra`
+   * becomes part of the shape, so a `meta` object travels to the agent in latest.json.
+   */
+  async function addDataUrl(dataUrl, extra = {}) {
+    const blob = await (await fetch(dataUrl)).blob();
+    const { x, y } = viewCentre();
+    return placeImage(new File([blob], "capture.png", { type: blob.type || "image/png" }), x, y, extra);
+  }
+
+  return { pick, pasteFromClipboard, captureScreen, importFiles, addDataUrl };
 }
 
 /** Image files on a clipboard/drag payload, found through `items` or `files` (browsers differ in which they fill). */

@@ -155,6 +155,8 @@
 
   function onMessage(message) {
     if (message?.type === "HOVER_REMOVE") teardown(true);
+    // The background hides the window for an instant so it isn't in its own screenshot.
+    if (message?.type === "HOVER_SET_VISIBLE") ui.host.style.display = message.visible ? "" : "none";
   }
 
   /** Removes the UI. `forget` also clears the double-injection guard (mode turned off). */
