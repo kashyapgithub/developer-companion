@@ -8,7 +8,7 @@ Terminal agents like Claude Code, Cursor and Antigravity are great at code and b
 - **Point at your app.** Capture a tab onto the canvas, or click any element on a page to bring in its screenshot, selector, HTML and styles. Draw over it to say exactly what you mean.
 - **Compare design and reality.** Lay your sketch over the live page, semi-transparent.
 - **Show the bug.** Record a session while you test: console errors, failed requests, your clicks and page changes, and screenshots at the moments that matter. One click sends it all to the agent.
-- **Let the agent look.** Your agent can screenshot your running app to check its own UI changes.
+- **Let the agent look and test.** Your agent can screenshot your running app, and even record a session while it clicks through to reproduce a bug on its own.
 - **Keep your repos in reach.** Your GitHub repositories, tagged and summarized, are available to the agent as context.
 - **Float over any tab.** Pop the editor over whatever page you are testing, move it, minimize it, keep drawing.
 - **One-click setup.** The installer connects Claude Code, Cursor, opencode and Antigravity for you, and works for agents in a VM too.
@@ -125,6 +125,8 @@ Click **GitHub** to browse your repositories with language filters, search, tags
 | :--- | :--- |
 | `get_latest_sketch` | The sketch you just drew: shapes, layers, labels, coordinates, and a PNG preview. |
 | `get_latest_recording` | The session you just recorded: summary, grouped errors, markers, timeline, and screenshots. |
+| `start_recording`, `stop_recording` | The agent records a session itself, then reads it with `get_latest_recording`. |
+| `interact_with_page` | The agent clicks, fills inputs, navigates or reloads in your app (allowed sites only) to reproduce a bug. |
 | `capture_tab` | A screenshot of your running app, so the agent can check its own UI changes. |
 | `get_browser_logs` | Recent console errors and failed network calls, without a recording. |
 | `get_github_repos` | Your repository catalog with tags and summaries. |

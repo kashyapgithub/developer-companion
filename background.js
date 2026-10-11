@@ -225,6 +225,8 @@ async function attachOpenAllowlistedTabs() {
 const commandDeps = {
   findTabIdByHostname: findTabIdByAppName,
   getAttachedHostnames: getAttachedAppNames,
+  attachOpenTabs: attachOpenAllowlistedTabs,
+  getAttachedApps: getAttachedAppNames,
 };
 startCommandLoop(commandDeps);
 

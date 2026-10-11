@@ -481,6 +481,45 @@ function startMcpServer() {
     }
   );
 
+  // Tools 4c-4e: let the agent record a session and drive the page itself
+  const askBrowser = async (command, payload = {}, waitMs = 20000) => {
+    const res = insertCommand({ command, payload });
+    commandBus.emit("new");
+    return waitForCommand(res.id, waitMs);
+  };
+  const asText = (done) => ({ content: [{ type: "text", text: done
+    ? JSON.stringify({ status: done.status, result: done.result }, null, 2)
+    : "The browser didn't answer. Is Chrome open with the Developer Companion extension?" }] });
+
+  server.tool(
+    "start_recording",
+    "Starts recording the user's browser session (console, errors, network, clicks, navigation, screenshots) on " +
+      "allowed sites. Then use interact_with_page to reproduce a bug, and stop_recording followed by get_latest_recording.",
+    {},
+    async () => asText(await askBrowser("rec_start"))
+  );
+
+  server.tool(
+    "stop_recording",
+    "Stops the recording and saves it. Afterwards call get_latest_recording to read what happened.",
+    {},
+    async () => asText(await askBrowser("rec_stop", {}, 30000))
+  );
+
+  server.tool(
+    "interact_with_page",
+    "Drives the user's running app (allowed sites only, e.g. localhost): click an element, fill an input, " +
+      "navigate to another page of the same site, or reload. Use it with start_recording to reproduce a bug.",
+    {
+      action: z.enum(["click", "fill", "navigate", "reload"]),
+      selector: z.string().optional().describe("CSS selector, for click and fill"),
+      value: z.string().optional().describe("Text to type, for fill"),
+      url: z.string().optional().describe("Address, for navigate"),
+      url_contains: z.string().optional().describe("Pick the tab whose URL contains this text"),
+    },
+    async (args) => asText(await askBrowser("page_action", args))
+  );
+
   // Tool 4b: capture_tab
   server.tool(
     "capture_tab",
