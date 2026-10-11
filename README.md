@@ -4,10 +4,14 @@
 
 Terminal agents like Claude Code, Cursor and Antigravity are great at code and bad at seeing. Developer Companion is a Chrome extension that gives them eyes: draw the UI you want, point at the bug you hit, and your agent reads both through one local connection.
 
-- **Sketch it.** A Figma-style canvas right in the browser: frames, shapes, text, connectors, effects, layers, screenshots you can draw over, and flow diagrams for architecture.
-- **Show the bug.** One click sends your page's console errors and failed network calls to the agent. No more copying from DevTools.
+- **Sketch it.** A Figma-style canvas right in the browser: frames, shapes, text, connectors, effects, layers, and flow diagrams for architecture.
+- **Point at your app.** Capture a tab onto the canvas, or click any element on a page to bring in its screenshot, selector, HTML and styles. Draw over it to say exactly what you mean.
+- **Compare design and reality.** Lay your sketch over the live page, semi-transparent.
+- **Show the bug.** Record a session while you test: console errors, failed requests, your clicks and page changes, and screenshots at the moments that matter. One click sends it all to the agent.
+- **Let the agent look.** Your agent can screenshot your running app to check its own UI changes.
 - **Keep your repos in reach.** Your GitHub repositories, tagged and summarized, are available to the agent as context.
 - **Float over any tab.** Pop the editor over whatever page you are testing, move it, minimize it, keep drawing.
+- **One-click setup.** The installer connects Claude Code, Cursor, opencode and Antigravity for you, and works for agents in a VM too.
 
 Everything runs on your machine. Nothing goes to a cloud service.
 
@@ -76,7 +80,12 @@ It prints an address, a port and an **access code**. In the extension, open the 
 - Pick tools from the floating dock at the bottom of the canvas.
 - Style the selected shape in the **Design** tab on the right: fill, stroke, radius, opacity, effects, alignment.
 - Manage structure in the **Layers** tab: drag to reorder or nest inside frames, collapse groups, rename with `F2`, right-click for more.
-- **Add screenshot** (or `Ctrl/Cmd+Shift+K`, or just paste) brings in an image from your clipboard, a file, or a screen capture. Draw over it to say exactly what you mean.
+- **Add screenshot** (or `Ctrl/Cmd+Shift+K`, or just paste) brings in an image. The menu has:
+  - **Paste from clipboard** and **Upload image**.
+  - **Capture this tab**: screenshots the web page you were just on, without a picker.
+  - **Pick an element on the page**: click any part of a page (arrow keys move to its parent or child, `Esc` cancels) and the canvas gets a cropped screenshot. The agent also gets the element's selector, HTML and computed styles, with form values left out.
+  - **Capture screen / window**: the browser's screen-share picker.
+  Draw over any of them to say exactly what you mean.
 - Add a comment pin to leave a note for the agent on a specific spot.
 - Click **Send to project**. Your agent reads it with `get_latest_sketch`.
 
@@ -119,7 +128,7 @@ Click **GitHub** to browse your repositories with language filters, search, tags
 | `capture_tab` | A screenshot of your running app, so the agent can check its own UI changes. |
 | `get_browser_logs` | Recent console errors and failed network calls, without a recording. |
 | `get_github_repos` | Your repository catalog with tags and summaries. |
-| `send_browser_command` | Ask the browser to flush logs, attach to a tab, or report status. |
+| `send_browser_command` | Ask the browser to flush logs, attach to a tab, or report status, and get the answer back. |
 | `get_companion_status` | Server health and how much is stored. |
 
 You can also query logs from a terminal:
