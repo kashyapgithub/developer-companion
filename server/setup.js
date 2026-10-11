@@ -1,8 +1,8 @@
 /**
  * setup.js — Service registration & MCP Agent Config Generator
  *
- * Registers the Developer Companion server to start automatically at login
- * and displays ready-to-copy configuration for coding agents.
+ * Registers the Developer Companion server to start automatically at login,
+ * then connects it to every coding agent found on this computer (see agents.js).
  */
 
 import os from "node:os";
@@ -10,6 +10,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { execSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { buildAgents } from "./agents.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SERVER_PATH = path.join(__dirname, "server.js");
@@ -93,19 +94,17 @@ if (platform === "linux") installLinux();
 else if (platform === "darwin") installMac();
 else if (platform === "win32") installWindows();
 
-console.log("=================================================================");
-console.log("               DEVELOPER COMPANION MCP SETUP                     ");
-console.log("=================================================================");
-console.log("\nTo connect this MCP server to your AI coding agents, add this to their config:\n");
-console.log(JSON.stringify({
-  mcpServers: {
-    "developer-companion": {
-      command: NODE_PATH,
-      args: [SERVER_PATH]
-    }
+// One click: register with every coding agent found on this computer.
+console.log("\nConnecting Developer Companion to your coding agents:\n");
+for (const agent of buildAgents(SERVER_PATH, NODE_PATH)) {
+  let status = "not found — skipped";
+  if (agent.detect()) {
+    try { status = agent.register(); } catch (e) { status = `failed (${e.message})`; }
+    if (status === "unreadable") status = "config has comments/invalid JSON — left untouched, add it by hand (see README)";
   }
-}, null, 2));
-console.log("\n• Claude Code: ~/.claude/mcp.json or claude mcp add developer-companion node " + SERVER_PATH);
-console.log("• Cursor: Settings -> Features -> MCP -> Add new MCP server");
-console.log("• Antigravity / Gemini CLI: Add to ~/.gemini/antigravity/mcp/ or MCP settings");
-console.log("=================================================================\n");
+  console.log(`  ${agent.name.padEnd(12)} ${status}`);
+}
+console.log("\nRestart any agent that was already open, then ask it to \"check the latest sketch\".");
+console.log("Other agent? Add this to its MCP config:\n");
+console.log(JSON.stringify({ mcpServers: { "developer-companion": { command: NODE_PATH, args: [SERVER_PATH] } } }, null, 2));
+console.log("\nUsing a VM or another computer? Run: npm run lan -- on\n");

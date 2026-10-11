@@ -35,27 +35,20 @@ The extension saves sketches, logs and your repo list to a small server on your 
 2. Click **Load unpacked** and choose this folder.
 3. Click the Developer Companion icon in the toolbar to open the editor.
 
-### 2. Start the local bridge
+### 2. Install the bridge (and connect your agents)
 - **Mac / Linux:** double-click `Install-Mac-Linux.command`, or run:
   ```bash
   cd server
   npm install
-  npm start
+  npm run setup
   ```
 - **Windows:** double-click `Install-Windows.bat`.
 
-The bridge listens on `http://127.0.0.1:5959` and keeps its data in `~/.developer-companion/`.
+That one step starts the bridge at login on `http://127.0.0.1:5959` (data lives in `~/.developer-companion/`) **and registers it with the coding agents it finds on your computer**: Claude Code, Cursor, opencode and Antigravity. It never overwrites your other MCP servers, backs up a config before changing it, and skips any config it can't safely read. Restart an agent that was already open, then tell it: *"Check the latest sketch."*
 
-### 3. Connect your agent
+Installed an agent later? Run `npm run connect` again; it's safe to repeat. To remove the autostart entry, run `npm run uninstall-setup`.
 
-**Claude Code**
-```bash
-claude mcp add developer-companion node /absolute/path/to/developer-companion/server/server.js
-```
-
-**Cursor** — Settings → Features → MCP → Add New MCP Server: name `developer-companion`, type `command`, command `node /absolute/path/to/developer-companion/server/server.js`.
-
-**Antigravity, Gemini CLI and other MCP clients**
+**Any other MCP agent** — add this to its config:
 ```json
 {
   "mcpServers": {
@@ -67,7 +60,13 @@ claude mcp add developer-companion node /absolute/path/to/developer-companion/se
 }
 ```
 
-Then tell your agent: *"Check the latest sketch."*
+### 3. Agent in a VM, or on another computer?
+Run this on the machine where the bridge lives:
+```bash
+cd server
+npm run lan -- on
+```
+It prints an address, a port and an **access code**. In the extension, open the gear next to **Send via** (Agent connection), choose *In a VM or another computer*, and type those in. Remote callers must present the code; the same computer never needs it. `npm run lan -- off` goes back to this-computer-only.
 
 ---
 
@@ -138,7 +137,7 @@ node server/query_logs.js groups
 - **Local only.** Sketches and logs live on your computer (`~/.developer-companion/`). Your GitHub token and AI keys stay in the browser's extension storage and are never sent to the bridge.
 - **Web pages can't reach the bridge.** The server only answers the extension and local tools. Requests from ordinary websites, and DNS-rebinding tricks, are refused.
 - **Secrets are masked.** When an error is captured, localStorage values that look like tokens, passwords, sessions or API keys are replaced with `[REDACTED]` before they are stored.
-- **Opt-in remote access.** To let an agent on another machine or VM reach the bridge, set `{ "lan": true, "token": "your-code" }` in `~/.developer-companion/config.json`. Remote callers must then send that access code; callers on the same computer don't need it.
+- **Opt-in remote access.** Off by default. `npm run lan -- on` turns it on and creates an access code; remote callers must send it, callers on the same computer don't.
 - If you need an extra trusted web origin (for example a hosted viewer), list it in the `COMPANION_ALLOWED_ORIGINS` environment variable.
 
 ---
