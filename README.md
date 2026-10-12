@@ -41,30 +41,72 @@ The extension saves sketches, logs and your repo list to a small server on your 
 2. Click **Load unpacked** and choose this folder.
 3. Click the Developer Companion icon in the toolbar to open the editor.
 
-### 2. Install the bridge (and connect your agents)
-- **Mac / Linux:** double-click `Install-Mac-Linux.command`, or run:
-  ```bash
-  cd server
-  npm install
-  npm run setup
-  ```
-- **Windows:** double-click `Install-Windows.bat`.
+### 2. Connect your agent (about 2 minutes)
 
-That one step starts the bridge at login on `http://127.0.0.1:5959` (data lives in `~/.developer-companion/`) **and registers it with the coding agents it finds on your computer**: Claude Code, Cursor, opencode and Antigravity. It never overwrites your other MCP servers, backs up a config before changing it, and skips any config it can't safely read. Restart an agent that was already open, then tell it: *"Check the latest sketch."*
+You need [Node.js 22+](https://nodejs.org). Then:
 
-Installed an agent later? Run `npm run connect` again; it's safe to repeat. To remove the autostart entry, run `npm run uninstall-setup`.
+```bash
+git clone https://github.com/kashyapgithub/developer-companion
+cd developer-companion/server
+npm install
+npm run setup        # starts the bridge at login AND connects your agents
+```
 
-**Any other MCP agent** — add this to its config:
+On Windows or Mac you can double-click `Install-Windows.bat` / `Install-Mac-Linux.command` instead.
+
+`npm run setup` finds the agents on your computer and registers Developer Companion with each one. You'll see something like:
+
+```
+  Claude Code  added
+  Cursor       added
+  opencode     not found — skipped
+  Antigravity  not found — skipped
+```
+
+**Now restart your agent** (a new session is enough for Claude Code) and try it:
+
+1. In the extension, draw a box and click **Send to project** (with **Send via → MCP server** selected).
+2. Tell your agent: *"Check the latest sketch."*
+
+If it answers with what you drew, you're connected. That's the whole setup.
+
+#### Prove it works in 10 seconds
+Ask your agent: *"List your Developer Companion tools."* You should see `get_latest_sketch`, `get_browser_logs`, `get_latest_recording` and the rest of the [tool list](#what-your-agent-can-call). Or run `claude mcp list` in a terminal; `developer-companion` should show as connected.
+
+#### Connect by hand (any agent)
+Installed an agent later? Run `npm run connect` again; it's safe to repeat and never overwrites your other MCP servers (it backs up a config before changing it). Prefer to do it yourself?
+
+| Agent | Command or file |
+| :--- | :--- |
+| **Claude Code** | `claude mcp add --scope user developer-companion -- node /full/path/to/developer-companion/server/server.js` |
+| **Cursor** | `~/.cursor/mcp.json` |
+| **Antigravity** | `~/.gemini/config/mcp_config.json` |
+| **opencode** | `~/.config/opencode/opencode.json` (uses `"mcp"` with a `command` array) |
+| **Anything else** | Its MCP config, same snippet as below |
+
+For the JSON-style configs, add:
 ```json
 {
   "mcpServers": {
     "developer-companion": {
       "command": "node",
-      "args": ["/absolute/path/to/developer-companion/server/server.js"]
+      "args": ["/full/path/to/developer-companion/server/server.js"]
     }
   }
 }
 ```
+Use the **full absolute path**; `~` and relative paths are the most common reason an agent says "server failed to start".
+
+#### Not working?
+| You see | Do this |
+| :--- | :--- |
+| Agent says it has no such tool | Restart the agent, then run `npm run connect` and check your agent shows `added`. |
+| Agent says "No sketch has been exported yet" | You're connected. Click **Send to project** in the editor first. |
+| Editor says **Can't reach this computer** | The bridge isn't running. Run `npm run setup` again, or `npm start` inside `server/`. Press **Test** in the Agent connection gear. |
+| "Port 5959 already in use" in a log | Harmless: another copy of the bridge is already running and the agent shares its data. |
+| Cursor/opencode config "left untouched" | Your config has comments. Add the snippet above by hand. |
+
+To remove the autostart entry, run `npm run uninstall-setup`.
 
 ### 3. Agent in a VM, or on another computer?
 Run this on the machine where the bridge lives:
@@ -72,7 +114,9 @@ Run this on the machine where the bridge lives:
 cd server
 npm run lan -- on
 ```
-It prints an address, a port and an **access code**. In the extension, open the gear next to **Send via** (Agent connection), choose *In a VM or another computer*, and type those in. Remote callers must present the code; the same computer never needs it. `npm run lan -- off` goes back to this-computer-only.
+It prints an address, a port and an **access code** (like `K7QD-4MXR`). In the extension, open the gear next to **Send via** (Agent connection), choose *In a VM or another computer*, type the address, port and code, and press **Test** (the dot turns green). Remote callers must present the code; the same computer never needs it. Wrong code? The editor says so and nothing is sent. `npm run lan -- off` goes back to this-computer-only.
+
+Your agent still connects to the bridge with the steps above, on the machine it runs on.
 
 ---
 
@@ -201,6 +245,8 @@ node server/query_logs.js groups
 ```bash
 npm install            # test tooling (puppeteer-core)
 npm run test:node      # fast tests: recording, agent connect
+# npm run test:browser also runs the full send-to-agent flow:
+# editor -> server -> a real MCP client (test/browser/send-to-agent.test.mjs)
 npm run test:browser   # loads the real extension in Chromium (set CHROMIUM_PATH if needed)
 npm test               # everything
 ```
