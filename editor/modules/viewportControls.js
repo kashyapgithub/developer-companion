@@ -16,6 +16,8 @@ const isTextEntry = (el) =>
   !!el && (el.isContentEditable || el.tagName === "TEXTAREA" ||
     (el.tagName === "INPUT" && ["text", "number", "search"].includes(el.type)));
 
+const MAX_ZOOM_DELTA = 30; // largest wheel delta that counts for one zoom step
+
 export function wireViewportControls({ canvasEl, engine, getShapes, getTool = () => "select" }) {
   let spaceDown = false;
   let panning = null; // { x, y } last pointer position while panning
@@ -26,8 +28,10 @@ export function wireViewportControls({ canvasEl, engine, getShapes, getTool = ()
     e.preventDefault();
     const rect = canvasEl.getBoundingClientRect();
     if (e.ctrlKey || e.metaKey) {
-      // Trackpad pinch arrives as ctrl+wheel with small fractional deltas.
-      engine.zoomAt(e.clientX - rect.left, e.clientY - rect.top, Math.exp(-e.deltaY * 0.01));
+      // Trackpad pinch arrives as ctrl+wheel with small deltas; a mouse notch is ±100 and would jump
+      // 2.7× at once, so each event is clamped to a gentle ~1.35× step.
+      const delta = Math.max(-MAX_ZOOM_DELTA, Math.min(MAX_ZOOM_DELTA, e.deltaY));
+      engine.zoomAt(e.clientX - rect.left, e.clientY - rect.top, Math.exp(-delta * 0.01));
     } else {
       engine.panBy(-e.deltaX, -e.deltaY);
     }
