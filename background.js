@@ -20,6 +20,7 @@ import { logSender } from "./lib/log-sender.js";
 import { startCommandLoop } from "./lib/commands.js";
 import { showSketchOverlay, hideSketchOverlay } from "./lib/sketch-overlay.js";
 import { toggleXray, handleXraySend } from "./lib/xray.js";
+import { openVideoWindow, sendImageToEditor } from "./lib/video-window.js";
 import { startPicking, handlePicked, handleCancelled } from "./lib/element-picker.js";
 import { captureTab, trackWebTabs, resolveTargetTab } from "./lib/tab-capture.js";
 import { captureForRecording, restoreRecording, startRecording, stopRecording, retrySend, addMarker, getRecordingState, isRecording } from "./lib/recording.js";
@@ -308,6 +309,16 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   }
   if (message.type === "SKETCH_OVERLAY_HIDE") {
     hideSketchOverlay({ senderTab: _sender?.tab }).then(sendResponse);
+    return true;
+  }
+
+  // Video review window (see video/video.js) and its "Draw on it" hand-off to the editor.
+  if (message.type === "VIDEO_OPEN") {
+    openVideoWindow().then(sendResponse);
+    return true;
+  }
+  if (message.type === "VIDEO_FRAME_TO_EDITOR") {
+    sendImageToEditor(message).then(sendResponse);
     return true;
   }
 

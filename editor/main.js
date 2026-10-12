@@ -125,6 +125,7 @@ wireSideTabs(document.getElementById("side"));
 wirePopover({ buttonEl: document.getElementById("agent-settings-btn"), popoverEl: document.getElementById("agent-popover") });
 wireRecorder();
 wireHoverToggle({ buttonEl: document.getElementById("hover-mode-btn") });
+document.getElementById("video-btn")?.addEventListener("click", () => chrome.runtime.sendMessage({ type: "VIDEO_OPEN" }));
 wireXray({ buttonEl: document.getElementById("xray-btn"), imageImport, say: (t) => { shotStatus.textContent = t; clearTimeout(shotStatus._t); shotStatus._t = setTimeout(() => { shotStatus.textContent = ""; }, 5000); } });
 wireSketchOverlay({ buttonEl: document.getElementById("overlay-btn"), controller, engine });
 

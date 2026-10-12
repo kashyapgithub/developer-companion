@@ -1,0 +1,32 @@
+/* video/video.css — the Video review window. Uses the editor's graphite tokens. */
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--ink); color: var(--text); font: 13px/1.45 system-ui, sans-serif; }
+main { padding: 14px 16px 20px; display: flex; flex-direction: column; gap: 14px; }
+header { display: flex; align-items: center; justify-content: space-between; }
+h1 { margin: 0; font-size: 15px; }
+h2 { margin: 0 0 6px; font-size: 12px; color: var(--text-dim); text-transform: uppercase; letter-spacing: .06em; }
+.timer { font: 600 15px ui-monospace, monospace; color: var(--text-dim); }
+body.recording .timer { color: #ff6b5e; }
+body.paused .timer { color: var(--send); }
+section { display: flex; flex-direction: column; gap: 10px; }
+section[hidden] { display: none; }
+.hint { margin: 0; color: var(--text-dim); }
+.hint b { color: var(--text); }
+.small { font-size: 12px; }
+.check { display: flex; align-items: center; gap: 8px; }
+button { font: inherit; color: var(--text); background: var(--raised); border: 1px solid var(--panel-border); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { background: var(--raised-hover); }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+button.big { padding: 11px 14px; font-weight: 600; background: var(--accent); border-color: var(--accent); color: #fff; }
+button.stop { background: #c8372d; border-color: #c8372d; color: #fff; font-weight: 600; }
+.controls { display: flex; flex-wrap: wrap; gap: 8px; }
+img#frame { width: 100%; border-radius: 8px; border: 1px solid var(--panel-border); background: #000; }
+label { display: flex; flex-direction: column; gap: 4px; color: var(--text-dim); font-size: 12px; }
+textarea { font: inherit; color: var(--text); background: var(--raised); border: 1px solid var(--panel-border); border-radius: 8px; padding: 8px; resize: vertical; }
+textarea:focus { outline: none; border-color: var(--accent); }
+.result { margin: 0; padding: 10px 12px; border-radius: 8px; background: var(--raised); }
+.result.error { border: 1px solid #c8372d; }
+ol { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+li { padding: 8px 10px; border-radius: 8px; background: var(--raised); }
+li b { color: var(--send); margin-right: 6px; font-family: ui-monospace, monospace; }
+li .want { color: var(--text); } li .is { color: var(--text-dim); }

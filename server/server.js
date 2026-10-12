@@ -32,6 +32,9 @@ import {
   queryRecording,
   readScreenshot,
   writeXray,
+  openVideoWrite,
+  writeVideoReview,
+  readVideoReview,
   readXray,
 } from "./storage.js";
 import { readConfig, codeMatches } from "./config.js";
@@ -125,6 +128,29 @@ function startHttpReceiver() {
         } catch (err) {
           respondJson(res, 400, { ok: false, error: String(err) });
         }
+      });
+      return;
+    }
+
+    // Video review: raw video upload (streamed to disk, never held in memory), then the notes
+    if (req.method === "POST" && pathname === "/video/upload") {
+      const id = url.searchParams.get("id");
+      if (!id) return respondJson(res, 400, { ok: false, error: "id is required" });
+      const { stream, cap } = openVideoWrite(id);
+      let size = 0, tooBig = false;
+      req.on("data", (chunk) => {
+        size += chunk.length;
+        if (size > cap) { tooBig = true; req.destroy(); stream.destroy(); return; }
+        stream.write(chunk);
+      });
+      req.on("end", () => stream.end(() => respondJson(res, 200, { ok: true, bytes: size })));
+      req.on("error", () => { if (tooBig) respondJson(res, 413, { ok: false, error: "Video too large" }); });
+      return;
+    }
+    if (req.method === "POST" && pathname === "/video/review") {
+      readJsonBody(req, res, (payload) => {
+        try { respondJson(res, 200, { ok: true, id: writeVideoReview(payload).id }); }
+        catch (err) { respondJson(res, 400, { ok: false, error: String(err) }); }
       });
       return;
     }
@@ -441,6 +467,35 @@ function startMcpServer() {
         if (!data) return;
         content.push({ type: "text", text: `Screenshot of element ${i + 1}: ${found.doc.elements[i].hierarchy?.slice(-1)[0] || found.doc.elements[i].tag}` });
         content.push({ type: "image", data, mimeType: "image/png" });
+      });
+      return { content };
+    }
+  );
+
+  // Tool: get_video_review
+  server.tool(
+    "get_video_review",
+    "Returns a screen recording the user made while reviewing their app, with the moments they paused on. " +
+      "Each moment has the time, a screenshot of that exact frame, what the user WANTS ('expected') and what is " +
+      "ACTUALLY happening ('actual'). Start from the moments: compare each frame with the expectation and fix the " +
+      "difference. The full video file path is included for tools that can watch video. If a log recording was " +
+      "captured at the same time, its id is given: read it with get_latest_recording.",
+    { id: z.string().optional().describe("A specific review id (default: the newest)") },
+    async ({ id }) => {
+      const found = readVideoReview(id);
+      if (!found) return { content: [{ type: "text", text: "No video review yet. Ask the user to press Video in Developer Companion, record, pause on the moments that matter and write what they want vs what happens." }] };
+      const { doc, frames } = found;
+      const summary = {
+        id: doc.id, duration_seconds: doc.durationSeconds, source: doc.source || null,
+        video_file: doc.video_file, log_recording_id: doc.recordingId || null,
+        moments: doc.moments.map((m, i) => ({ n: i + 1, at: m.at, expected: m.expected, actual: m.actual, note: m.note || undefined })),
+      };
+      const content = [{ type: "text", text: JSON.stringify(summary, null, 2) }];
+      frames.slice(0, MAX_SHOTS_RETURNED + 4).forEach((data, i) => {
+        if (!data) return;
+        const m = doc.moments[i];
+        content.push({ type: "text", text: `Moment ${i + 1} at ${m.at}\nWANTED: ${m.expected || "(not written)"}\nHAPPENING: ${m.actual || "(not written)"}` });
+        content.push({ type: "image", data, mimeType: "image/jpeg" });
       });
       return { content };
     }

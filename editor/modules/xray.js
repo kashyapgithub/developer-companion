@@ -29,6 +29,13 @@ export function wireXray({ buttonEl, imageImport, say }) {
     say(res.active ? "X-ray is on — hover the page, click to select. Esc leaves." : "X-ray is off.");
   });
 
+  // A single image (e.g. a paused video frame) to draw on.
+  chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+    if (message?.type !== "ADD_IMAGE_TO_CANVAS") return;
+    imageImport.addDataUrl(message.dataUrl, { name: message.name, meta: message.meta }).then((ok) => sendResponse({ ok }));
+    return true;
+  });
+
   // Elements sent from the page. The background picks exactly one editor to receive them.
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     if (message?.type !== "XRAY_TO_CANVAS") return;

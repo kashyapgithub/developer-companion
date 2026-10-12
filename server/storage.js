@@ -464,3 +464,52 @@ export function readXray() {
     return { doc, images };
   } catch { return null; }
 }
+
+// ---------------------------------------------------------------------------
+// Video reviews: a screen recording plus the moments the user paused on
+// ---------------------------------------------------------------------------
+const MAX_VIDEO_BYTES = 500 * 1024 * 1024;
+const videoRoot = () => path.join(getStoreDir(), "video");
+const safeId = (id) => String(id || "").replace(/[^\w.-]/g, "_").slice(0, 64);
+export const videoDir = (id) => path.join(videoRoot(), safeId(id));
+export const videoPath = (id) => path.join(videoDir(id), "video.webm");
+
+/** Opens the file the video upload streams into. Returns { stream, cap } (cap = byte limit). */
+export function openVideoWrite(id) {
+  fs.mkdirSync(videoDir(id), { recursive: true });
+  return { stream: fs.createWriteStream(videoPath(id)), cap: MAX_VIDEO_BYTES };
+}
+
+/**
+ * Saves the review (moments with their frames and notes) next to the video.
+ * Frames go to files; review.json keeps only their names.
+ */
+export function writeVideoReview(review) {
+  const id = safeId(review.id);
+  const dir = videoDir(id);
+  fs.mkdirSync(dir, { recursive: true });
+  const moments = (review.moments || []).map((m, i) => {
+    const { frame, ...rest } = m;
+    const parsed = /^data:image\/jpeg;base64,(.+)$/s.exec(frame || "");
+    if (!parsed) return rest;
+    const file = `moment-${i + 1}.jpg`;
+    fs.writeFileSync(path.join(dir, file), Buffer.from(parsed[1], "base64"));
+    return { ...rest, frame_file: file };
+  });
+  const doc = { ...review, id, moments, video_file: fs.existsSync(videoPath(id)) ? videoPath(id) : null, savedAt: new Date().toISOString() };
+  fs.writeFileSync(path.join(dir, "review.json"), JSON.stringify(doc, null, 2));
+  fs.writeFileSync(path.join(videoRoot(), "latest.txt"), id);
+  return doc;
+}
+
+/** The newest review (or the one asked for) with its frames as base64, or null. */
+export function readVideoReview(id) {
+  try {
+    const wanted = safeId(id) || fs.readFileSync(path.join(videoRoot(), "latest.txt"), "utf8").trim();
+    const doc = JSON.parse(fs.readFileSync(path.join(videoDir(wanted), "review.json"), "utf8"));
+    const frames = doc.moments.map((m) => {
+      try { return fs.readFileSync(path.join(videoDir(wanted), path.basename(m.frame_file))).toString("base64"); } catch { return null; }
+    });
+    return { doc, frames };
+  } catch { return null; }
+}

@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Video review</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="../editor/ui/tokens.css" />
+  <link rel="stylesheet" href="video.css" />
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Video review</h1>
+      <span id="timer" class="timer" aria-live="off">00:00</span>
+    </header>
+
+    <!-- Step 1: not recording yet -->
+    <section id="idle">
+      <p class="hint">Record your app, pause on any moment, and write what you <b>want</b> next to what's <b>happening</b>. Your agent gets each frame with your notes.</p>
+      <label class="check"><input type="checkbox" id="with-logs" checked /> Also capture console &amp; network logs</label>
+      <button id="start" class="big">Choose what to record…</button>
+      <p class="hint small">Pick the browser tab with your app in the next window.</p>
+    </section>
+
+    <!-- Step 2: recording -->
+    <section id="live" hidden>
+      <div class="controls">
+        <button id="pause" class="primary">Pause &amp; annotate</button>
+        <button id="mark">Mark moment</button>
+        <button id="stop" class="stop">Stop &amp; send</button>
+      </div>
+      <p class="hint small">Pause freezes the video on the exact frame so you can say what you want.</p>
+    </section>
+
+    <!-- Step 3: paused on a frame -->
+    <section id="paused" hidden>
+      <img id="frame" alt="The paused frame" />
+      <label>What I want<textarea id="expected" rows="2" placeholder="e.g. The button should be full width and blue"></textarea></label>
+      <label>What's happening<textarea id="actual" rows="2" placeholder="e.g. It is small and grey, and nothing happens on click"></textarea></label>
+      <div class="controls">
+        <button id="save-moment" class="primary">Save moment &amp; resume</button>
+        <button id="to-canvas" title="Put this frame on the canvas so you can draw on it">Draw on it</button>
+        <button id="discard">Discard</button>
+      </div>
+    </section>
+
+    <!-- Step 4: sending / result -->
+    <section id="done" hidden>
+      <p id="result" class="result"></p>
+      <button id="again" class="big">Record another</button>
+    </section>
+
+    <section id="moments-wrap" hidden>
+      <h2>Moments</h2>
+      <ol id="moments"></ol>
+    </section>
+  </main>
+  <script type="module" src="video.js"></script>
+</body>
+</html>
