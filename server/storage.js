@@ -430,3 +430,37 @@ export function getSummaryStats() {
     githubReposCount: github?.repos?.length || (Array.isArray(github) ? github.length : 0),
   };
 }
+
+// ---------------------------------------------------------------------------
+// X-ray selections ("send to agent" from X-ray mode)
+// ---------------------------------------------------------------------------
+const xrayDir = () => path.join(getStoreDir(), "xray");
+
+/** Saves the newest selection (replacing the previous one); crops go to files, details to latest.json. */
+export function writeXray(payload) {
+  const dir = xrayDir();
+  fs.rmSync(dir, { recursive: true, force: true });
+  fs.mkdirSync(dir, { recursive: true });
+  const elements = (payload.elements || []).map((el, i) => {
+    const { screenshot, ...rest } = el;
+    const m = /^data:image\/png;base64,(.+)$/s.exec(screenshot || "");
+    if (!m) return rest;
+    const file = `element-${i + 1}.png`;
+    fs.writeFileSync(path.join(dir, file), Buffer.from(m[1], "base64"));
+    return { ...rest, screenshot_file: file };
+  });
+  fs.writeFileSync(path.join(dir, "latest.json"), JSON.stringify({ ...payload, elements }, null, 2));
+  return elements.length;
+}
+
+/** The newest selection with its crops as base64 images, or null. */
+export function readXray() {
+  try {
+    const doc = JSON.parse(fs.readFileSync(path.join(xrayDir(), "latest.json"), "utf8"));
+    const images = doc.elements.map((el) => {
+      if (!el.screenshot_file) return null;
+      try { return fs.readFileSync(path.join(xrayDir(), path.basename(el.screenshot_file))).toString("base64"); } catch { return null; }
+    });
+    return { doc, images };
+  } catch { return null; }
+}

@@ -27,6 +27,8 @@ export function elementMeta(el) {
     html: el.html,
     styles: el.styles,
     ancestry: el.ancestry,
+    component: el.component || null,   // React/Vue component name (X-ray mode)
+    hierarchy: el.hierarchy || null,   // page root → element, as labels (X-ray mode)
     rect: el.rect,
     url: el.url,
     title: el.title,

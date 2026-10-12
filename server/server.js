@@ -31,6 +31,8 @@ import {
   summarizeRecording,
   queryRecording,
   readScreenshot,
+  writeXray,
+  readXray,
 } from "./storage.js";
 import { readConfig, codeMatches } from "./config.js";
 import { isOriginAllowed, isHostAllowed, applyCors } from "./guard.js";
@@ -123,6 +125,15 @@ function startHttpReceiver() {
         } catch (err) {
           respondJson(res, 400, { ok: false, error: String(err) });
         }
+      });
+      return;
+    }
+
+    // X-ray: elements the user selected on a web page
+    if (req.method === "POST" && pathname === "/xray") {
+      readJsonBody(req, res, (payload) => {
+        try { respondJson(res, 200, { ok: true, count: writeXray(payload) }); }
+        catch (err) { respondJson(res, 400, { ok: false, error: String(err) }); }
       });
       return;
     }
@@ -410,6 +421,27 @@ function startMcpServer() {
         content.push({ type: "text", text: `Screenshot at ${r.created_at} — ${r.message}` });
         content.push({ type: "image", ...img });
       }
+      return { content };
+    }
+  );
+
+  // Tool: get_selected_elements (X-ray mode)
+  server.tool(
+    "get_selected_elements",
+    "Returns the web page elements the user selected with X-ray mode: for each one its CSS selector, " +
+      "framework component name (React/Vue, when known), position in the page hierarchy, text, HTML, " +
+      "computed styles and a cropped screenshot. Call this when the user says they selected or pointed at " +
+      "something on a page and wants it changed, fixed or explained.",
+    {},
+    async () => {
+      const found = readXray();
+      if (!found) return { content: [{ type: "text", text: "No selected elements yet. Ask the user to turn on X-ray (Alt+Shift+X on the page), click the element, and press Send to agent." }] };
+      const content = [{ type: "text", text: JSON.stringify(found.doc, null, 2) }];
+      found.images.forEach((data, i) => {
+        if (!data) return;
+        content.push({ type: "text", text: `Screenshot of element ${i + 1}: ${found.doc.elements[i].hierarchy?.slice(-1)[0] || found.doc.elements[i].tag}` });
+        content.push({ type: "image", data, mimeType: "image/png" });
+      });
       return { content };
     }
   );

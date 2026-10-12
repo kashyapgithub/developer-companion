@@ -19,8 +19,9 @@ import {
 import { logSender } from "./lib/log-sender.js";
 import { startCommandLoop } from "./lib/commands.js";
 import { showSketchOverlay, hideSketchOverlay } from "./lib/sketch-overlay.js";
+import { toggleXray, handleXraySend } from "./lib/xray.js";
 import { startPicking, handlePicked, handleCancelled } from "./lib/element-picker.js";
-import { captureTab, trackWebTabs } from "./lib/tab-capture.js";
+import { captureTab, trackWebTabs, resolveTargetTab } from "./lib/tab-capture.js";
 import { captureForRecording, restoreRecording, startRecording, stopRecording, retrySend, addMarker, getRecordingState, isRecording } from "./lib/recording.js";
 import { setHoverEnabled, isHoverEnabled, repairHoverRegistration } from "./lib/hover-manager.js";
 import { getForwardConfig, setForwardConfig, DEFAULT_FORWARD_CONFIG } from "./lib/forward-config.js";
@@ -234,6 +235,13 @@ repairHoverRegistration().catch(() => {});
 restoreRecording().catch(() => {});
 trackWebTabs();
 
+// Keyboard shortcut (Alt+Shift+X): X-ray on the current page. The shortcut also grants activeTab, so no extra prompt.
+chrome.commands.onCommand.addListener(async (command) => {
+  if (command !== "toggle-xray") return;
+  const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+  toggleXray(tab);
+});
+
 // Restart the command loop if the worker was recycled (no-op while it is running).
 chrome.alarms.create("poll-commands", { periodInMinutes: 0.5 });
 chrome.alarms.onAlarm.addListener((alarm) => {
@@ -300,6 +308,16 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   }
   if (message.type === "SKETCH_OVERLAY_HIDE") {
     hideSketchOverlay({ senderTab: _sender?.tab }).then(sendResponse);
+    return true;
+  }
+
+  // X-ray mode (see lib/xray.js): toggled from the editor, sends from the page itself.
+  if (message.type === "XRAY_TOGGLE") {
+    resolveTargetTab(_sender?.tab).then(toggleXray).then(sendResponse);
+    return true;
+  }
+  if (message.type === "XRAY_SEND" && _sender?.tab) {
+    handleXraySend(message, _sender.tab).then(sendResponse);
     return true;
   }
 

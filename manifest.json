@@ -28,7 +28,8 @@
     "alarms",
     "clipboardRead",
     "scripting",
-    "unlimitedStorage"
+    "unlimitedStorage",
+    "activeTab"
   ],
   "host_permissions": [
     "http://localhost:*/*",
@@ -55,5 +56,14 @@
         "https://*/*"
       ]
     }
-  ]
+  ],
+  "commands": {
+    "toggle-xray": {
+      "suggested_key": {
+        "default": "Alt+Shift+X",
+        "mac": "Alt+Shift+X"
+      },
+      "description": "X-ray mode: hover and select elements on the page"
+    }
+  }
 }

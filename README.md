@@ -6,6 +6,7 @@ Terminal agents like Claude Code, Cursor and Antigravity are great at code and b
 
 - **Sketch it.** A Figma-style canvas right in the browser: frames, shapes, text, connectors, effects, layers, and flow diagrams for architecture.
 - **Point at your app.** Capture a tab onto the canvas, or click any element on a page to bring in its screenshot, selector, HTML and styles. Draw over it to say exactly what you mean.
+- **X-ray any web product.** Hover to see what every element is and where it sits in the page, select it, and send it to your agent.
 - **Compare design and reality.** Lay your sketch over the live page, semi-transparent.
 - **Show the bug.** Record a session while you test: console errors, failed requests, your clicks and page changes, and screenshots at the moments that matter. One click sends it all to the agent.
 - **Let the agent look and test.** Your agent can screenshot your running app, and even record a session while it clicks through to reproduce a bug on its own.
@@ -91,6 +92,17 @@ It prints an address, a port and an **access code**. In the extension, open the 
 
 Choose how the sketch travels with **Send via**: a local file you drop into a project folder, or the MCP server. The gear next to it holds the folder, the path your agent sees (useful for VMs and shared folders), and a button that copies a ready-made prompt for your agent.
 
+### X-ray: hover any page, see what each element is
+Press the X-ray button in the top bar (or `Alt+Shift+X` on any page) and hover over a web product:
+
+- Each element gets a name chip: its framework component (React or Vue, when the page exposes it), test id or label, then `tag#id.class` and its size.
+- **Click** to select it (the page doesn't react), **Shift+click** to add more.
+- The bar at the bottom shows the **hierarchy** (`body › div#app › form › button`). Click any crumb to jump to that ancestor; ↑ and ↓ also move to the parent or first child.
+- **Add to canvas** drops the selection onto your sketch as cropped images with their details attached. **Send to agent** sends them straight to your agent, which reads them with `get_selected_elements` (selector, component, hierarchy, HTML, styles and a screenshot of each). **Copy selector** does what it says.
+- `Esc` leaves X-ray.
+
+It works on any normal web page once you've allowed page access. Chrome's own pages (`chrome://…`, the Web Store) are off limits, and content inside cross-origin iframes isn't reachable.
+
 ### Overlay your sketch on the live app
 Press **Overlay** to lay your sketch (or the frame you have selected) over the page you were just on, semi-transparent, so you can compare design and reality. The page stays clickable. A small bar on the page has an opacity slider, **Align** (drag the sketch into place) and ✕. Press Overlay again to remove it.
 
@@ -127,6 +139,7 @@ Click **GitHub** to browse your repositories with language filters, search, tags
 | `get_latest_recording` | The session you just recorded: summary, grouped errors, markers, timeline, and screenshots. |
 | `start_recording`, `stop_recording` | The agent records a session itself, then reads it with `get_latest_recording`. |
 | `interact_with_page` | The agent clicks, fills inputs, navigates or reloads in your app (allowed sites only) to reproduce a bug. |
+| `get_selected_elements` | The elements you selected with X-ray: selector, component, hierarchy, HTML, styles, screenshots. |
 | `capture_tab` | A screenshot of your running app, so the agent can check its own UI changes. |
 | `get_browser_logs` | Recent console errors and failed network calls, without a recording. |
 | `get_github_repos` | Your repository catalog with tags and summaries. |
@@ -163,7 +176,7 @@ node server/query_logs.js groups
 | `logs/` | The log viewer and settings page. |
 | `lib/` | Extension background modules (log capture, allowlist, commands, hover manager). |
 | `server/` | The local bridge and MCP server, plus the installer, agent-connect and LAN tools. |
-| `picker/`, `sketch-overlay/` | Scripts injected into a page for element picking and the sketch overlay. |
+| `picker/`, `xray/`, `sketch-overlay/` | Scripts injected into a page for element picking, X-ray mode and the sketch overlay. |
 | `test/` | Tests: `node/` (fast) and `browser/` (real Chromium with the real extension). |
 | `background.js` | The extension's service worker. |
 
