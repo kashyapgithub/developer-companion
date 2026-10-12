@@ -695,6 +695,8 @@ export function createToolController({ canvasEl, textInputEl, viewport, onChange
   function finishDraw(shape) {
     normalizeShape(shape);
     if (shape.type === "pen") {
+      // A plain click with the pencil leaves a dot (a zero-length round-capped stroke).
+      if (shape.points.length === 1) shape.points.push({ x: shape.points[0].x + 0.01, y: shape.points[0].y });
       shape.points = simplifyPoints(shape.points, PEN_SIMPLIFY_PX / viewport.getScale());
       if (shape.points.length < 2) return false;
     } else {

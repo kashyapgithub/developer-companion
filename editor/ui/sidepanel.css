@@ -107,3 +107,16 @@ body[data-mode="dev"] #pane-design { display: none; }
 
 /* Controls that don't apply to the selection (see designRelevance.js). */
 .row[hidden], label.num[hidden], .sec[hidden] { display: none !important; }
+
+/* ---- colour swatches (colorPalette.js) ---- */
+.swatches { display: flex; flex-direction: column; gap: 6px; padding: 2px 0 8px; }
+.swatch-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.swatch-row[hidden] { display: none; }
+.side-pane .swatch {
+  width: 16px; height: 16px; min-width: 0; padding: 0; border-radius: 50%; cursor: pointer;
+  border: 1px solid rgba(255,255,255,.28); box-shadow: 0 0 0 1px rgba(0,0,0,.25);
+  display: inline-flex; align-items: center; justify-content: center; color: var(--text-dim, #9aa0ac);
+}
+.side-pane .swatch:hover { transform: scale(1.18); }
+.side-pane .swatch.eyedropper { background: transparent; }
+.side-pane .swatch-row.recent .swatch { border-radius: 4px; }

@@ -223,3 +223,6 @@ GitHub Actions runs both on every push.
 
 MIT. Designed and built by [Kashyap](https://github.com/kashyapgithub).
 
+
+
+> **Colours:** the Design panel has preset swatches, recent colours and an eyedropper under both Fill and Stroke. The pencil also leaves a dot on a plain click, and stroke width goes up to 24.

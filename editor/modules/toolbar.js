@@ -7,6 +7,7 @@
  * -------------------------------------------------------------------------- */
 
 import { createDesignRelevance } from "./designRelevance.js";
+import { createColorPalette } from "./colorPalette.js";
 import { exportSketch } from "./exporter.js";
 import { createConnectionDialog } from "./connectionDialog.js";
 import { DEFAULT_CONNECTION, loadConnection, testConnection, describeConnection } from "./connection.js";
@@ -55,6 +56,10 @@ function wireStyleControls(controller) {
     const n = Number(input.value);
     return Number.isFinite(n) && input.value !== "" ? Math.max(lo, Math.min(hi, n)) : fallback;
   };
+
+  // Quick swatches + recents + eyedropper under each colour row.
+  createColorPalette($("stroke-swatches"), strokeColor);
+  createColorPalette($("fill-swatches"), fillColor);
 
   strokeColor.addEventListener("input", () => apply({ stroke: strokeColor.value }));
   strokeWidth.addEventListener("input", () => apply({ strokeWidth: Number(strokeWidth.value) }));

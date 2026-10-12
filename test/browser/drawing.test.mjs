@@ -48,5 +48,15 @@ await p.keyboard.press("v"); await wait(80);
  await p.keyboard.down("Control"); await p.keyboard.press("c"); await p.keyboard.up("Control"); await p.keyboard.down("Control"); await p.keyboard.press("v"); await p.keyboard.up("Control"); await wait(200); log("Ctrl+C / Ctrl+V pastes",(await shapes()).length===n0+2,String((await shapes()).length));}
 // zoom per wheel notch (a typical mouse notch is deltaY=100)
 {await p.keyboard.press("0"); const z0=await p.evaluate(()=>window.__uiSketch.engine.getScale()); await p.mouse.move(700,400); await p.keyboard.down("Control"); await p.mouse.wheel({deltaY:-100}); await p.keyboard.up("Control"); await wait(200); const z1=await p.evaluate(()=>window.__uiSketch.engine.getScale()); log("one wheel notch zooms gently (under 1.6x)", z1/z0>1.05 && z1/z0<1.6, (z1/z0).toFixed(2));}
+// pencil: a plain click leaves a dot; colour swatches recolour the selection and the next shape
+{await p.keyboard.press("Escape"); await p.keyboard.down("Shift"); await p.keyboard.press("P"); await p.keyboard.up("Shift"); await wait(80);
+ const n0=(await shapes()).length; await p.mouse.click(1050,700); await wait(200);
+ log("pencil click leaves a dot", (await shapes()).length===n0+1 && (await shapes()).at(-1).t==="pen");
+ const strokeOf=()=>p.evaluate(()=>{const c=window.__uiSketch.controller;const id=c.state.selectedIds[0];return c.state.shapes.find(s=>s.id===id)?.stroke});
+ await p.evaluate(()=>document.querySelector("#stroke-swatches .swatch[data-color='#ef4444']").click()); await wait(150);
+ log("stroke swatch recolours the selected stroke", (await strokeOf())==="#ef4444", await strokeOf());
+ log("picked colour shows in recents", await p.evaluate(()=>!!document.querySelector("#stroke-swatches .recent .swatch[data-color='#ef4444']")));
+ await p.keyboard.press("Escape"); await p.keyboard.press("r"); await drag(900,650,980,720);
+ log("next shape uses the chosen colour", (await p.evaluate(()=>window.__uiSketch.controller.state.shapes.at(-1).stroke))==="#ef4444");}
 log("no page errors", errs.filter(e=>!/favicon/.test(e)).length===0, errs.join("|"));
 await b.close(); process.exit(0);
