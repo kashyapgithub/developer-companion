@@ -90,6 +90,9 @@ function drawMarquee(ctx, m, scale) {
   ctx.restore();
 }
 
+const GRID_STEP = 24;   // world units between dots
+const MIN_GRID_PX = 9;  // below this on screen the dots turn to noise
+
 export function createCanvasEngine(canvasEl, { createCanvas = defaultCreateCanvas } = {}) {
   const ctx = canvasEl.getContext("2d");
   setEffectsCanvasFactory(createCanvas); // effects render into offscreen canvases made by the same factory
@@ -184,10 +187,28 @@ export function createCanvasEngine(canvasEl, { createCanvas = defaultCreateCanva
     });
   }
 
+  /** Faint dot grid in screen space, so it pans and zooms with the view. Hidden when zoomed too far out. */
+  function drawBackdrop(dpr) {
+    const step = GRID_STEP * view.scale;
+    if (step < MIN_GRID_PX) return;
+    const color = (typeof getComputedStyle === "function" ? getComputedStyle(canvasEl).getPropertyValue("--grid-dot").trim() : "") || "rgba(0,0,0,0.14)";
+    ctx.fillStyle = color;
+    const r = Math.max(0.8, Math.min(1.4, step / 22)) * dpr;
+    const x0 = ((view.x % step) + step) % step, y0 = ((view.y % step) + step) % step;
+    for (let x = x0; x < cssWidth; x += step) {
+      for (let y = y0; y < cssHeight; y += step) {
+        ctx.beginPath();
+        ctx.arc(x * dpr, y * dpr, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  }
+
   function renderNow(state) {
     const dpr = window.devicePixelRatio || 1;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvasEl.width, canvasEl.height);
+    drawBackdrop(dpr);
     ctx.setTransform(dpr * view.scale, 0, 0, dpr * view.scale, dpr * view.x, dpr * view.y);
 
     // Any image still decoding triggers a repaint once it's ready.

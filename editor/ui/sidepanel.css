@@ -104,3 +104,6 @@ body[data-mode="dev"] #pane-design { display: none; }
 
 /* ---- small windows ------------------------------------------------------- */
 @media (max-width: 900px) { #side { flex-basis: 224px; } .row { font-size: 12px; } .side-pane input[type="range"] { width: 96px; } }
+
+/* Controls that don't apply to the selection (see designRelevance.js). */
+.row[hidden], label.num[hidden], .sec[hidden] { display: none !important; }

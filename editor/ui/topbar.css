@@ -130,7 +130,9 @@
 .rec .hidden { display: none !important; }
 
 .rec-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--danger); flex: none; }
-#toolbar .rec-start { color: var(--text); }
+#toolbar .rec-start { color: var(--text); gap: 7px; padding: 0 11px; width: auto; border: 1px solid var(--panel-border); }
+#toolbar .rec-label { font-weight: 600; }
+.tb-sep { width: 1px; height: 18px; background: var(--panel-border); flex: none; margin: 0 2px; }
 #toolbar .rec-start:hover { background: rgba(229, 100, 90, 0.14); }
 
 .rec-live {

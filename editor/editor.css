@@ -11,7 +11,8 @@
   --accent: #3a5bd9;
   --text-dim: #9a9ba3;
   --text: #e8e8ec;
-  --canvas-bg: #ffffff;
+  --canvas-bg: #eceef2;   /* soft grey so white frames read as pages */
+  --grid-dot: rgba(30, 34, 48, 0.16);
 }
 
 * { box-sizing: border-box; }

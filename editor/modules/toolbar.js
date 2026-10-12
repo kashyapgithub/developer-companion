@@ -6,6 +6,7 @@
  * real values back into the controls whenever the selection changes.
  * -------------------------------------------------------------------------- */
 
+import { createDesignRelevance } from "./designRelevance.js";
 import { exportSketch } from "./exporter.js";
 import { createConnectionDialog } from "./connectionDialog.js";
 import { DEFAULT_CONNECTION, loadConnection, testConnection, describeConnection } from "./connection.js";
@@ -92,12 +93,16 @@ function wireStyleControls(controller) {
     group: $("group-btn"), ungroup: $("ungroup-btn"), del: $("delete-btn"),
   };
 
+  const updateRelevance = createDesignRelevance();
+  updateRelevance([]);
+
   /** Reflects the selection into the controls (only when the selection changes). */
   return function syncFromSelection(selection) {
     const nodes = selection.filter(s => s.type !== "connector" && !s.locked);
     const key = selection.map(s => `${s.id}:${s.groupId || ""}:${+s.locked}`).join(",");
     if (key === lastKey) return; // called on every drag frame — must stay cheap
     lastKey = key;
+    updateRelevance(selection);
 
     arrangeButtons.align.forEach(b => { b.disabled = nodes.length < 2; });
     arrangeButtons.distribute.forEach(b => { b.disabled = nodes.length < 3; });
