@@ -18,7 +18,7 @@ import { createShape } from "./shapes.js";
 const MAX_DISPLAY_PX = 480;        // initial on-screen size of an imported image
 const MAX_STORED_DIMENSION = 1600; // longest side kept in the stored/exported image
 
-export function wireImageImport({ canvasWrapEl, canvasEl, controller, viewport, pickerEl }) {
+export function wireImageImport({ canvasWrapEl, canvasEl, controller, viewport, pickerEl, onPlaced }) {
   let lastClient = null; // last pointer position over the canvas (clipboard paste carries none)
 
   canvasWrapEl.addEventListener("pointermove", (e) => { lastClient = { x: e.clientX, y: e.clientY }; });
@@ -168,6 +168,7 @@ export function wireImageImport({ canvasWrapEl, canvasEl, controller, viewport, 
       const worldMax = MAX_DISPLAY_PX / viewport.getScale();
       const k = Math.min(1, worldMax / Math.max(width, height));
       controller.addShape(createShape("image", { x, y, w: width * k, h: height * k, src: dataUrl, ...extra }));
+      try { onPlaced?.({ dataUrl, name: extra.name, url: extra.meta?.url, kind: extra.meta?.kind }); } catch { /* a listener must never break importing */ }
       return true;
     } catch (err) {
       console.warn("Could not import image:", err);

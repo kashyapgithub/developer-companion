@@ -39,6 +39,8 @@ import {
 } from "./storage.js";
 import { readConfig, codeMatches } from "./config.js";
 import { isOriginAllowed, isHostAllowed, applyCors } from "./guard.js";
+import { handleInspiration } from "./inspiration-routes.js";
+import { searchItems, readItemImage } from "./inspiration.js";
 
 const PORT = Number(process.env.PORT) || Number(process.env.LOG_SERVER_PORT) || 5959;
 const MAX_BODY_BYTES = 60 * 1024 * 1024; // 60MB for large PNG wireframes
@@ -163,6 +165,9 @@ function startHttpReceiver() {
       });
       return;
     }
+
+    // Inspiration library (folders of saved screenshots)
+    if (handleInspiration(req, res, pathname, { readJsonBody, respondJson })) return;
 
     // Query Recent Logs
     if (req.method === "GET" && (pathname === "/logs/recent" || pathname === "/logs")) {
@@ -468,6 +473,37 @@ function startMcpServer() {
         content.push({ type: "text", text: `Screenshot of element ${i + 1}: ${found.doc.elements[i].hierarchy?.slice(-1)[0] || found.doc.elements[i].tag}` });
         content.push({ type: "image", data, mimeType: "image/png" });
       });
+      return { content };
+    }
+  );
+
+  // Tool: get_inspiration
+  server.tool(
+    "get_inspiration",
+    "Returns screenshots the user saved to their inspiration library (designs and sites they like), with " +
+      "title, source URL, folder and their notes, plus the images. Use it when the user says to match the " +
+      "style of, or take ideas from, their saved inspiration or a named folder. Call with no arguments to " +
+      "see the folder names first.",
+    {
+      folder: z.string().optional().describe("Folder name, e.g. 'Dashboards' (or 'Unsorted')"),
+      query: z.string().optional().describe("Text to find in titles, notes and URLs"),
+      limit: z.number().int().min(1).max(30).optional().describe("Max items listed (default 12)"),
+      include_images: z.boolean().optional().describe("Attach the images (default true, at most 4)"),
+    },
+    async ({ folder, query, limit, include_images }) => {
+      const found = searchItems({ folder, query, limit });
+      if (!found.items.length) {
+        return { content: [{ type: "text", text: JSON.stringify({ message: "No saved inspiration matched. Ask the user to save screenshots to the Inspiration tab.", folders: found.folders }, null, 2) }] };
+      }
+      const content = [{ type: "text", text: JSON.stringify(found, null, 2) }];
+      if (include_images !== false) {
+        for (const item of found.items.slice(0, 4)) {
+          const img = readItemImage(item.id);
+          if (!img) continue;
+          content.push({ type: "text", text: `Image: ${item.title}${item.note ? " — " + item.note : ""}` });
+          content.push({ type: "image", data: img.buffer.toString("base64"), mimeType: img.mime });
+        }
+      }
       return { content };
     }
   );

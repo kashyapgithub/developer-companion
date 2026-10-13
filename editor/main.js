@@ -25,6 +25,7 @@ import { wireSketchOverlay } from "./modules/sketchOverlay.js";
 import { createAutosave } from "./modules/autosave.js";
 import { createElementPicker } from "./modules/elementPicker.js";
 import { wireSideTabs, wirePopover } from "./modules/sidePanel.js";
+import { wireInspiration } from "./modules/inspiration.js";
 import { wireRecorder } from "./modules/recorder.js";
 import { applyEmbeddedClass } from "./modules/embedMode.js";
 
@@ -96,8 +97,10 @@ effectsPanel = createEffectsPanel({
   controller,
 });
 wireViewportControls({ canvasEl, engine, getShapes: () => controller.state.shapes, getTool: () => controller.state.currentTool });
+let inspiration = null; // set below; imports reach it through this late binding
 imageImport = wireImageImport({
   canvasWrapEl, canvasEl, controller, viewport: engine, pickerEl: document.getElementById("image-picker"),
+  onPlaced: (info) => inspiration?.autoSave(info),
 });
 
 const shotStatus = document.getElementById("screenshot-status");
@@ -122,6 +125,7 @@ dock = createDock({
 autosave = createAutosave({ controller });
 autosave.restore();
 wireSideTabs(document.getElementById("side"));
+inspiration = wireInspiration({ controller, imageImport, shotStatus });
 wirePopover({ buttonEl: document.getElementById("agent-settings-btn"), popoverEl: document.getElementById("agent-popover") });
 wireRecorder();
 wireHoverToggle({ buttonEl: document.getElementById("hover-mode-btn") });

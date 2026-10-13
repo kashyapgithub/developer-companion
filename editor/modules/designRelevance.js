@@ -19,6 +19,7 @@ const APPLIES_TO = {
   "shape-count": ["polygon", "star"],
   "shape-inner": ["star"],
   "gradient-enabled": FILLED,
+  "save-inspo-btn": ["image"],
 };
 
 /** The visible wrapper to hide for a control: its settings row, or its number cell. */

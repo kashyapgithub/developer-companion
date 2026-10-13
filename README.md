@@ -159,6 +159,15 @@ Press the X-ray button in the top bar (or `Alt+Shift+X` on any page) and hover o
 
 It works on any normal web page once you've allowed page access. Chrome's own pages (`chrome://…`, the Web Store) are off limits, and content inside cross-origin iframes isn't reachable.
 
+### Inspiration library: keep screenshots from around the web
+Found a design you love? Save it, sort it, and tell your agent *"match the style of my Dashboards folder."*
+
+- **Save:** select any image on the canvas and press **Save to inspiration** in the Design panel. Or open **Add screenshot** and turn on **Also save to Inspiration**, and every capture, paste or upload is kept automatically (tab captures remember the page URL).
+- **Organise:** the **Inspiration** tab has folders, search, a note for each image ("why I saved this") and a rename/move/delete for everything. Drag a thumbnail onto a folder chip to file it. Deleting a folder never deletes its images; they go back to *Unsorted*.
+- **Use:** double-click a thumbnail (or **Add to canvas**) to put it on the canvas next to your sketch.
+- **Your agent:** `get_inspiration` returns the images with their notes and source URLs. Ask for a folder by name, search by text, or call it with no arguments to see your folders.
+- **Where it lives:** plain files in `~/.developer-companion/inspiration/` on the machine running the bridge, so it survives reinstalling the extension.
+
 ### Overlay your sketch on the live app
 Press **Overlay** to lay your sketch (or the frame you have selected) over the page you were just on, semi-transparent, so you can compare design and reality. The page stays clickable. A small bar on the page has an opacity slider, **Align** (drag the sketch into place) and ✕. Press Overlay again to remove it.
 
@@ -201,6 +210,7 @@ Click **GitHub** to browse your repositories with language filters, search, tags
 | `get_browser_logs` | Recent console errors and failed network calls, without a recording. |
 | `get_github_repos` | Your repository catalog with tags and summaries. |
 | `send_browser_command` | Ask the browser to flush logs, attach to a tab, or report status, and get the answer back. |
+| `get_inspiration` | Your saved inspiration screenshots, by folder or search, with your notes and source URLs. |
 | `get_companion_status` | Server health and how much is stored. |
 
 You can also query logs from a terminal:

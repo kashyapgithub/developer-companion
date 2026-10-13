@@ -23,6 +23,7 @@
         <button data-shot="tab" role="menuitem"><span>Capture this tab</span></button>
         <button data-shot="element" role="menuitem"><span>Pick an element on the page…</span></button>
         <button data-shot="capture" role="menuitem"><span>Capture screen / window…</span></button>
+        <label class="shot-opt" title="Every capture or paste is also kept in the Inspiration tab"><input type="checkbox" id="insp-autosave" /> <span>Also save to Inspiration</span></label>
       </div>
       <span id="screenshot-status" class="hint"></span>
     </div>
@@ -201,6 +202,7 @@
       <div class="side-tabs" role="tablist">
         <button id="tab-design" role="tab" data-tab="design" aria-selected="true">Design</button>
         <button id="tab-layers" role="tab" data-tab="layers" aria-selected="false">Layers</button>
+        <button id="tab-inspiration" role="tab" data-tab="inspiration" aria-selected="false">Inspiration</button>
       </div>
 
       <!-- Design tab: everything that edits the selected shape -->
@@ -244,6 +246,7 @@
           <h3>Appearance</h3>
           <div class="row" title="Rounded corners (rectangles only)"><span>Radius</span><span class="ctl"><input type="range" id="corner-radius" min="0" max="60" value="0" /></span></div>
           <div class="row" title="Applies to the selected shape, or the next one you draw"><span>Opacity</span><span class="ctl"><input type="range" id="opacity" min="0" max="100" value="100" /></span></div>
+          <div class="row" title="Keep this image in your Inspiration library"><span>Reference image</span><span class="ctl"><button id="save-inspo-btn" class="insp-btn">Save to inspiration</button></span></div>
           <button id="effects-btn" class="wide" title="Effects: shadows, blurs, noise, texture, glass, shader">Effects <span id="effects-count" class="badge hidden">0</span></button>
         </div>
 
@@ -260,6 +263,35 @@
         <div class="side-foot">
           <button id="clear-btn" class="ghost-danger" title="Clear canvas">Clear canvas</button>
         </div>
+      </section>
+
+      <!-- Inspiration tab: saved screenshots, in folders -->
+      <section id="inspiration" class="side-pane" role="tabpanel" hidden>
+        <div class="insp-head">
+          <input id="insp-search" type="search" placeholder="Search saved images" aria-label="Search saved images" />
+          <button id="insp-new-folder" class="insp-btn" title="Create a folder">+ Folder</button>
+        </div>
+        <div id="insp-name-row" class="insp-name-row" hidden>
+          <input id="insp-name-input" type="text" maxlength="80" placeholder="Folder name" aria-label="Folder name" />
+          <button id="insp-name-ok" class="insp-btn">Save</button>
+        </div>
+        <div id="insp-folders" class="insp-folders"></div>
+        <div id="insp-folder-actions" class="insp-folder-actions" hidden>
+          <button id="insp-rename" class="insp-link">Rename folder</button>
+          <button id="insp-delete-folder" class="insp-link danger">Delete folder</button>
+        </div>
+        <div id="insp-grid" class="insp-grid"></div>
+        <div id="insp-detail" class="insp-detail" hidden>
+          <input id="insp-title" type="text" maxlength="80" aria-label="Title" />
+          <a id="insp-source" class="insp-source" hidden></a>
+          <textarea id="insp-note" rows="3" maxlength="2000" placeholder="Why you saved it (the agent reads this)" aria-label="Note"></textarea>
+          <label class="insp-row"><span>Folder</span><select id="insp-folder-select"></select></label>
+          <div class="btn-row">
+            <button id="insp-use" class="insp-btn primary" title="Place it on the canvas (or double-click it)">Add to canvas</button>
+            <button id="insp-delete" class="insp-btn danger">Delete</button>
+          </div>
+        </div>
+        <p id="insp-status" class="hint" role="status"></p>
       </section>
 
       <!-- Layers tab -->
