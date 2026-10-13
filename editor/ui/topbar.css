@@ -114,6 +114,9 @@
 }
 @media (max-width: 1100px) {
   .brand { padding-right: 0; }
+  #toolbar .rec-start .rec-label { display: none; }   /* red dot only: the label collided with Fit */
+  #toolbar .rec-start { padding: 0 9px; }
+  #toolbar #zoom-fit { display: none !important; }    /* click the zoom % to reset instead */
 }
 @media (max-width: 760px) {
   .select-field { display: none; }   /* choose Local/MCP from the settings popover width allows */

@@ -41,7 +41,7 @@
 
 /* ---- controls ------------------------------------------------------------ */
 .side-pane input[type="color"] {
-  width: 30px; height: 22px; padding: 0; border: 1px solid var(--panel-border); border-radius: 5px; background: none; cursor: pointer;
+  width: 30px; height: 22px; padding: 0; border: 1px solid rgba(255,255,255,.3); /* visible even when the colour is near-black */ border-radius: 5px; background: none; cursor: pointer;
 }
 .side-pane input[type="color"]::-webkit-color-swatch-wrapper { padding: 2px; }
 .side-pane input[type="color"]::-webkit-color-swatch { border: 0; border-radius: 3px; }
