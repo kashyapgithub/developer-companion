@@ -127,6 +127,43 @@ export function registerBrowserTools(server, ctx) {
     async ({ url_contains }) => resultText(await askBrowser("design_tokens", { url_contains }, 30000))
   );
 
+  // ---- 8. API mock mode --------------------------------------------------------------
+  server.tool(
+    "set_mock",
+    "Answers matching requests of the user's running app (allowed sites) with a fake response, without touching the " +
+      "backend — so you can see how the UI looks on an error, an empty list, a slow response or a failed connection. " +
+      "Give url_contains (and optionally method), then status/body, or fail:true for a network failure, or delay_ms " +
+      "to make it slow. from_recorded:true starts from the last real response (secrets are masked in it). " +
+      "Reload or re-trigger the request afterwards. Always call clear_mocks when done.",
+    {
+      url_contains: z.string().describe("Part of the request URL to intercept, e.g. '/api/orders'"),
+      method: z.string().optional().describe("Only this HTTP method, e.g. 'POST'"),
+      status: z.number().int().min(100).max(599).optional().describe("HTTP status (default 200)"),
+      body: z.union([z.string(), z.record(z.any()), z.array(z.any())]).optional().describe("Response body: text, or JSON"),
+      content_type: z.string().optional().describe("Content-Type (default: JSON if the body looks like JSON)"),
+      headers: z.record(z.string()).optional().describe("Extra response headers"),
+      delay_ms: z.number().int().min(0).max(10000).optional().describe("Wait this long before answering"),
+      fail: z.boolean().optional().describe("Make the request fail like a dropped connection"),
+      from_recorded: z.boolean().optional().describe("Start from the last recorded real response"),
+      url_contains_tab: z.string().optional().describe("Which tab (part of its URL)"),
+    },
+    async (args) => resultText(await askBrowser("set_mock", args, 20000))
+  );
+
+  server.tool(
+    "list_mocks",
+    "Lists the active API mocks on the user's app tab and how many requests each answered.",
+    { url_contains_tab: z.string().optional().describe("Which tab") },
+    async (args) => resultText(await askBrowser("list_mocks", args, 15000))
+  );
+
+  server.tool(
+    "clear_mocks",
+    "Removes API mocks from the user's app tab: one by id, or all of them. Real requests flow again.",
+    { id: z.string().optional().describe("Mock id from set_mock/list_mocks (omit to clear all)"), url_contains_tab: z.string().optional().describe("Which tab") },
+    async (args) => resultText(await askBrowser("clear_mocks", args, 15000))
+  );
+
   // ---- 7. accessibility + performance scan -----------------------------------------
   server.tool(
     "audit_page",
