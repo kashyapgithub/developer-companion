@@ -249,6 +249,20 @@ export function queryRecentLogs({ app, level, minutes = 60, limit = 100 } = {}) 
   return rows.map(formatLogRow);
 }
 
+/** Rows between two ISO times (oldest first), optionally one environment ("server" or "browser"). */
+export function queryLogsBetween(fromIso, toIso, { environment, limit = 100 } = {}) {
+  let sql = "SELECT * FROM logs WHERE created_at >= ? AND created_at <= ?";
+  const params = [fromIso, toIso];
+  if (environment) { sql += " AND environment = ?"; params.push(environment); }
+  sql += " ORDER BY created_at ASC, id ASC LIMIT ?"; params.push(limit);
+  return getDb().prepare(sql).all(...params).map(formatLogRow);
+}
+
+/** Rows that carry a given request id (server access logs and anything tagged with it). */
+export function queryLogsByRequestId(requestId, { limit = 50 } = {}) {
+  return getDb().prepare("SELECT * FROM logs WHERE request_id = ? ORDER BY id ASC LIMIT ?").all(requestId, limit).map(formatLogRow);
+}
+
 export function queryLogGroups({ limit = 20 } = {}) {
   const db = getDb();
   const rows = db.prepare(`

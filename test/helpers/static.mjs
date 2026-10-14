@@ -17,6 +17,9 @@ export function startStatic() {
   const server = http.createServer((req, res) => {
     const { pathname } = new URL(req.url, "http://x");
     if (pathname === "/page") { res.setHeader("content-type", "text/html"); return res.end(DEMO_PAGE); }
+    // Fake API for the network/trace/mock tests.
+    if (pathname === "/api/ok") { res.setHeader("content-type", "application/json"); res.setHeader("x-request-id", "req-ok-1"); return res.end(JSON.stringify({ items: [1, 2, 3], token: "abc123secret" })); }
+    if (pathname === "/api/fail") { res.statusCode = 500; res.setHeader("content-type", "application/json"); res.setHeader("x-request-id", "req-fail-1"); return res.end(JSON.stringify({ error: "db exploded", detail: "connection refused" })); }
     const file = path.join(ROOT, pathname.replace(/^\/ext\//, "/"));
     if (!file.startsWith(ROOT) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) { res.statusCode = 404; return res.end("not found"); }
     res.setHeader("content-type", TYPES[path.extname(file)] || "application/octet-stream");

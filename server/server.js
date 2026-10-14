@@ -41,6 +41,7 @@ import { readConfig, codeMatches } from "./config.js";
 import { isOriginAllowed, isHostAllowed, applyCors } from "./guard.js";
 import { handleInspiration } from "./inspiration-routes.js";
 import { searchItems, readItemImage } from "./inspiration.js";
+import { registerBrowserTools } from "./browser-tools.js";
 
 const PORT = Number(process.env.PORT) || Number(process.env.LOG_SERVER_PORT) || 5959;
 const MAX_BODY_BYTES = 60 * 1024 * 1024; // 60MB for large PNG wireframes
@@ -613,6 +614,8 @@ function startMcpServer() {
   const asText = (done) => ({ content: [{ type: "text", text: done
     ? JSON.stringify({ status: done.status, result: done.result }, null, 2)
     : "The browser didn't answer. Is Chrome open with the Developer Companion extension?" }] });
+
+  registerBrowserTools(server, { askBrowser });
 
   server.tool(
     "start_recording",

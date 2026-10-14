@@ -10,7 +10,8 @@
     "uninstall-setup": "node uninstall.js",
     "query": "node query_logs.js",
     "connect": "node connect.js",
-    "lan": "node lan.js"
+    "lan": "node lan.js",
+    "tail": "node tail.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4"
