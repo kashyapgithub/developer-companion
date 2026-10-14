@@ -8,6 +8,8 @@
  */
 
 import http from "node:http";
+import fs from "node:fs";
+import path from "node:path";
 import { EventEmitter } from "node:events";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
@@ -37,9 +39,11 @@ import {
   readVideoReview,
   readXray,
 } from "./storage.js";
-import { readConfig, codeMatches } from "./config.js";
+import { readConfig, codeMatches, getStoreDir } from "./config.js";
 import { isOriginAllowed, isHostAllowed, applyCors } from "./guard.js";
 import { handleInspiration } from "./inspiration-routes.js";
+import { handleHandoff } from "./handoff-routes.js";
+import { buildBundle, describeBundle, saveBundleFile } from "./handoff.js";
 import { searchItems, readItemImage } from "./inspiration.js";
 import { registerBrowserTools } from "./browser-tools.js";
 
@@ -166,6 +170,9 @@ function startHttpReceiver() {
       });
       return;
     }
+
+    // Session handoff: export / import everything the agent sees as one file
+    if (handleHandoff(req, res, pathname, url.searchParams, { readJsonBody, respondJson })) return;
 
     // Inspiration library (folders of saved screenshots)
     if (handleInspiration(req, res, pathname, { readJsonBody, respondJson })) return;
@@ -536,6 +543,20 @@ function startMcpServer() {
         content.push({ type: "image", data, mimeType: "image/jpeg" });
       });
       return { content };
+    }
+  );
+
+  // Tool: export_handoff
+  server.tool(
+    "export_handoff",
+    "Packs everything the user has shared in this session (sketch, X-ray selection, video review notes and frames, " +
+      "inspiration library, log recording summary) into ONE json file and returns its path and contents list. Use it " +
+      "to hand the session to someone else or another machine. The user can import it from Agent settings > Import handoff.",
+    { include_inspiration: z.boolean().optional().describe("Include the inspiration library images (default true; can be large)") },
+    async ({ include_inspiration }) => {
+      const bundle = buildBundle({ inspiration: include_inspiration !== false });
+      const file = saveBundleFile(bundle, path.join(getStoreDir(), "handoffs"));
+      return { content: [{ type: "text", text: JSON.stringify({ file, size_kb: Math.round(fs.statSync(file).size / 1024), contains: describeBundle(bundle) }, null, 2) }] };
     }
   );
 

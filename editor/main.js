@@ -27,6 +27,7 @@ import { createElementPicker } from "./modules/elementPicker.js";
 import { wireSideTabs, wirePopover } from "./modules/sidePanel.js";
 import { wireInspiration } from "./modules/inspiration.js";
 import { wireRecorder } from "./modules/recorder.js";
+import { wireHandoff } from "./modules/handoffUi.js";
 import { applyEmbeddedClass } from "./modules/embedMode.js";
 
 applyEmbeddedClass(); // before first paint, so the floating-window layout doesn't flash
@@ -128,6 +129,10 @@ wireSideTabs(document.getElementById("side"));
 inspiration = wireInspiration({ controller, imageImport, shotStatus });
 wirePopover({ buttonEl: document.getElementById("agent-settings-btn"), popoverEl: document.getElementById("agent-popover") });
 wireRecorder();
+wireHandoff({
+  exportBtn: document.getElementById("handoff-export-btn"), importBtn: document.getElementById("handoff-import-btn"),
+  fileInput: document.getElementById("handoff-file"), say: (t) => { shotStatus.textContent = t; clearTimeout(shotStatus._t); shotStatus._t = setTimeout(() => { shotStatus.textContent = ""; }, 6000); },
+});
 wireHoverToggle({ buttonEl: document.getElementById("hover-mode-btn") });
 document.getElementById("video-btn")?.addEventListener("click", () => chrome.runtime.sendMessage({ type: "VIDEO_OPEN" }));
 wireXray({ buttonEl: document.getElementById("xray-btn"), imageImport, say: (t) => { shotStatus.textContent = t; clearTimeout(shotStatus._t); shotStatus._t = setTimeout(() => { shotStatus.textContent = ""; }, 5000); } });
