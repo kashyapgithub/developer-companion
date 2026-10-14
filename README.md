@@ -168,10 +168,14 @@ Found a design you love? Save it, sort it, and tell your agent *"match the style
 - **Your agent:** `get_inspiration` returns the images with their notes and source URLs. Ask for a folder by name, search by text, or call it with no arguments to see your folders.
 - **Where it lives:** plain files in `~/.developer-companion/inspiration/` on the machine running the bridge, so it survives reinstalling the extension.
 
-### Stream console: let your agent watch the console live
-Press **Stream** in the top bar (it turns red). While it's on, every console line, warning and uncaught error from your allowed tabs goes to your agent within a moment, even the ones your log settings would normally keep local. Press it again to stop.
+### Stream: let your agent watch everything live `[testing purpose]`
+Press **Stream** in the top bar (it turns red and carries a **[testing purpose]** tag so you don't leave it on by accident). While it's on, **everything** from your allowed tabs goes to your agent within a moment, whatever your log settings say:
 
-Your agent follows along with `watch_console`: it waits until something new appears, returns it with a cursor, and calls again from that cursor, so nothing is missed or repeated. Ask it *"watch my console while I click through the checkout"*. It can filter by site and by level (`min_level: "error"`). Network traffic isn't part of this; use `get_network_requests` for that. Secrets are masked the same way as everywhere else.
+- every console line, warning and uncaught error;
+- every network request as one line when it finishes: `POST /api/orders → 201 (84ms, 1.2KB)`, with the request and response bodies (secrets and passwords masked, long bodies cut);
+- page navigation and every click or form submit.
+
+Your agent follows along with `watch_console`: it waits until something new appears, returns it with a cursor, and calls again from that cursor, so nothing is missed or repeated. Ask it *"watch everything while I click through the checkout"*. It can narrow things down with `kinds` (`console`, `network`, `navigation`, `action`), `app` (a site) and `min_level`. Turn Stream off when you're done: with it off, only the categories ticked in your log settings are sent.
 
 ### Full-stack debugging tools (agent side)
 These are for the agent, not buttons. Once connected, just ask in plain words. They only touch tabs on your allowed sites (localhost by default).
@@ -242,7 +246,7 @@ Click **GitHub** to browse your repositories with language filters, search, tags
 | `get_page_state` | localStorage, sessionStorage, cookie names and framework state, secrets masked. |
 | `audit_page` | Quick accessibility checks and load performance. |
 | `set_mock`, `list_mocks`, `clear_mocks` | Fake API responses (errors, empty, slow, failing) for your running app. |
-| `watch_console` | Follows your browser console live (needs **Stream** on): new lines as they happen, with a cursor to continue. |
+| `watch_console` | Follows your browser live (needs **Stream** on): console, network requests with bodies, navigation and clicks, with a cursor to continue. |
 | `export_handoff` | Packs the whole session into one file to hand over. |
 
 You can also query logs from a terminal:

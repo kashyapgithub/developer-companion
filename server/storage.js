@@ -257,14 +257,15 @@ export function latestLogId() {
 /**
  * Rows newer than `afterId` (oldest first) — the engine of watch_console.
  * @param {number} afterId  only rows with a larger id
- * @param {{app?:string, levels?:string[], environment?:string, limit?:number}} filters
+ * @param {{app?:string, levels?:string[], tags?:string[], environment?:string, limit?:number}} filters (tags: a row matches if it has ANY of them)
  */
-export function queryLogsAfter(afterId, { app, levels, environment, limit = 100 } = {}) {
+export function queryLogsAfter(afterId, { app, levels, tags, environment, limit = 100 } = {}) {
   let sql = "SELECT * FROM logs WHERE id > ?";
   const params = [Number(afterId) || 0];
   if (app) { sql += " AND app_name = ?"; params.push(app); }
   if (environment) { sql += " AND environment = ?"; params.push(environment); }
   if (levels?.length) { sql += ` AND level IN (${levels.map(() => "?").join(",")})`; params.push(...levels.map((l) => l.toLowerCase())); }
+  if (tags?.length) { sql += ` AND (${tags.map(() => "tags LIKE ?").join(" OR ")})`; params.push(...tags.map((t) => `%"${t}"%`)); }
   sql += " ORDER BY id ASC LIMIT ?"; params.push(limit);
   return getDb().prepare(sql).all(...params).map(formatLogRow);
 }

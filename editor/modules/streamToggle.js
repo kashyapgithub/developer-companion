@@ -1,7 +1,8 @@
 /**
- * streamToggle.js — the "Stream console" button in the top bar.
+ * streamToggle.js — the "Stream" button in the top bar, labelled [testing purpose].
  *
- * On  = every console line from your allowed tabs reaches the agent within a moment
+ * On  = EVERYTHING from your allowed tabs reaches the agent within a moment: console, errors,
+ *       every network request (status, timing, masked bodies), page navigation and clicks
  *       (the agent follows along with watch_console).
  * Off = back to normal (errors only, in slower batches).
  *
@@ -13,8 +14,8 @@
 const STREAM_KEY = "dcStreamConsole";
 
 const TITLES = {
-  off: "Stream console to agent: send every console line to your agent as it happens",
-  on: "Streaming console to your agent — click to stop",
+  off: "Stream everything to agent (testing purpose): console, every network request with bodies, page navigation and clicks, live",
+  on: "Streaming everything to your agent — click to stop",
 };
 
 /** Pure: how the button should look for a state. */
@@ -40,7 +41,7 @@ export function wireStreamToggle({ buttonEl, say = () => {} }) {
     const res = await chrome.runtime.sendMessage({ type: "STREAM_SET", enabled: turnOn }).catch(() => null);
     if (!res?.ok) { say("Couldn't change streaming — reload the extension and try again."); return; }
     render(res.enabled);
-    say(res.enabled ? "Streaming the console to your agent." : "Streaming stopped.");
+    say(res.enabled ? "Streaming everything to your agent (console, network, navigation, clicks)." : "Streaming stopped.");
   });
 
   // Initial state, then follow changes made elsewhere (floating window, another editor tab).

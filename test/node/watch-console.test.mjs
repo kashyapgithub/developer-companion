@@ -18,6 +18,12 @@ t("app filter", store.queryLogsAfter(0, { app: "api" }).length === 1);
 t("level filter", store.queryLogsAfter(0, { levels: ["error"] }).map((r) => r.message).join() === "three");
 t("limit", store.queryLogsAfter(0, { limit: 2 }).length === 2);
 t("latestLogId is the newest id", store.latestLogId() === all[3].id);
+store.insertLogs({ app_name: "localhost", environment: "browser", level: "info", message: "GET /a → 200", tags: ["network", "finished", "200"] });
+store.insertLogs({ app_name: "localhost", environment: "browser", level: "info", message: "click button", tags: ["timeline", "user-action", "click"] });
+t("tag filter finds network rows only", store.queryLogsAfter(0, { tags: ["network"] }).map((r) => r.message).join() === "GET /a → 200");
+t("tag filter accepts several (any match)", store.queryLogsAfter(0, { tags: ["network", "user-action"] }).length === 2);
+t("kind names map to tags", wc.KIND_TAGS.console.includes("uncaught-exception") && wc.KIND_TAGS.network.includes("finished"));
+t("body details are appended to a line", wc.formatLine({ created_at: "2026-10-14T12:00:00.000Z", level: "info", app_name: "x", message: "POST /a → 201", context: { requestBody: "{q:1}", responseBody: "{id:2}" } }).includes("request body: {q:1}\n  response body: {id:2}"));
 
 t("pickLevels warn -> warn,error,fatal", wc.pickLevels("warn").join() === "warn,error,fatal");
 t("pickLevels unknown -> undefined", wc.pickLevels("loud") === undefined && wc.pickLevels() === undefined);
@@ -27,10 +33,11 @@ t("error lines carry a short stack", line.split("\n").length === 1 + 4);
 t("info lines carry no stack", wc.formatLine({ created_at: "2026-10-14T12:03:41.220Z", level: "info", app_name: "x", message: "m", stack_trace: "s" }).split("\n").length === 1);
 
 // Long poll
-let t0 = Date.now(); let rows = await wc.waitForRows(all[3].id, {}, 300, { poll: 50 });
+const base = store.latestLogId();
+let t0 = Date.now(); let rows = await wc.waitForRows(base, {}, 300, { poll: 50 });
 t("waits the full time when nothing happens", rows.length === 0 && Date.now() - t0 >= 280, String(Date.now() - t0));
 t0 = Date.now(); setTimeout(() => add("late arrival"), 250);
-rows = await wc.waitForRows(all[3].id, {}, 5000, { poll: 50 });
+rows = await wc.waitForRows(base, {}, 5000, { poll: 50 });
 t("returns as soon as something arrives (not after the full wait)", rows.length === 1 && rows[0].message === "late arrival" && Date.now() - t0 < 1500, String(Date.now() - t0));
 t("returns immediately when rows already exist", (await wc.waitForRows(0, {}, 5000)).length >= 4);
 

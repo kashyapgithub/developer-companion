@@ -64,6 +64,37 @@ w = await watch({ cursor, wait_seconds: 3, min_level: "error" });
 t("min_level filters out lower levels", w.lines.some((l) => /only errors please/.test(l)) && !w.lines.some((l) => /filter me out/.test(l)), JSON.stringify(w.lines).slice(0, 160));
 cursor = w.cursor;
 
+
+// ---- EVERYTHING: network, navigation, clicks (streaming is still on) ----
+w = await watch({ cursor, wait_seconds: 0 }); cursor = w.cursor;
+t("button carries the [testing purpose] label", /\[testing purpose\]/.test(await ed.$eval("#stream-btn", (b) => b.textContent)));
+await page.evaluate(async () => {
+  await fetch("/api/ok", { headers: { "X-Trace": "t1" } });
+  await fetch("/api/fail", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0In0.abcdefghijk" }, body: JSON.stringify({ email: "a@b.co", password: "hunter2", qty: 3 }) });
+  document.getElementById("save").click();
+});
+await wait(2500);
+w = await watch({ cursor, wait_seconds: 3 });
+const text = w.lines.join("\n");
+t("successful request streams as one line with status and timing", /GET \/api\/ok → 200 \(\d+ms/.test(text), text.slice(0, 200));
+t("failed request streams with its 500 and level error", /error \[127\.0\.0\.1\] POST \/api\/fail → 500/.test(text));
+t("response body is included", /response body: .*db exploded/.test(text));
+t("request body is included, password masked", /request body: .*qty/.test(text) && !/hunter2/.test(text) && /REDACTED/.test(text));
+t("tokens never appear in the stream", !/eyJhbGciOiJIUzI1NiJ9/.test(text) && !/abc123secret/.test(text));
+t("no duplicate '← 500' line for the same failure", !/← 500/.test(text));
+t("the click on the page is streamed", /Clicked|click/i.test(text) && /save|Save changes/i.test(text), text.slice(-240));
+cursor = w.cursor;
+
+const nets = await watch({ cursor: 0, kinds: ["network"], wait_seconds: 0, limit: 200 });
+t("kinds:network returns only network lines", nets.count > 0 && nets.lines.every((l) => / → \d{3}|Network request failed/.test(l)), nets.lines.slice(0, 3).join(" | "));
+const clicks = await watch({ cursor: 0, kinds: ["action"], wait_seconds: 0, limit: 200 });
+t("kinds:action returns only clicks/submits", clicks.count > 0 && !clicks.lines.some((l) => / → \d{3}/.test(l)));
+
+await page.evaluate(() => { history.pushState({}, "", "/page?step=2"); });
+await wait(1500);
+w = await watch({ cursor, wait_seconds: 3, kinds: ["navigation"] });
+t("page navigation is streamed", /Page changed to .*step=2/.test(w.lines.join("\n")), w.lines.join(" | "));
+
 // ---- turn OFF again ----
 await ed.evaluate(() => document.getElementById("stream-btn").click()); await wait(600);
 t("clicking again turns it off", (await ed.$eval("#stream-btn", (b) => b.getAttribute("aria-pressed"))) === "false");
