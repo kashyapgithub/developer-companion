@@ -127,6 +127,16 @@ export function registerBrowserTools(server, ctx) {
     async ({ url_contains }) => resultText(await askBrowser("design_tokens", { url_contains }, 30000))
   );
 
+  // ---- 6. page state snapshot -------------------------------------------------------
+  server.tool(
+    "get_page_state",
+    "Reads the client-side state of the user's open web page (allowed sites): localStorage, sessionStorage, cookie " +
+      "NAMES (never values) and framework globals like __NEXT_DATA__ / __NUXT__ / __INITIAL_STATE__. Secrets are masked. " +
+      "Use it to debug 'why is the UI in this state' — logged-in or not, feature flags, cached data.",
+    { url_contains: z.string().optional().describe("Which tab") },
+    async ({ url_contains }) => resultText(await askBrowser("page_state", { url_contains }, 20000))
+  );
+
   // ---- 5. responsive capture + network throttle -------------------------------------
   server.tool(
     "capture_responsive",
