@@ -54,7 +54,7 @@ export function wireScreenshotMenu({ buttonEl, menuEl, statusEl, imageImport, el
   const say = (text) => {
     statusEl.textContent = text;
     clearTimeout(statusTimer);
-    statusTimer = setTimeout(() => { statusEl.textContent = ""; }, 4000);
+    statusTimer = setTimeout(() => { statusEl.textContent = ""; }, 9000);   // long enough to read an error
   };
   const open = () => menuEl.classList.remove("hidden");
   const close = () => menuEl.classList.add("hidden");
