@@ -127,6 +127,17 @@ export function registerBrowserTools(server, ctx) {
     async ({ url_contains }) => resultText(await askBrowser("design_tokens", { url_contains }, 30000))
   );
 
+  // ---- 7. accessibility + performance scan -----------------------------------------
+  server.tool(
+    "audit_page",
+    "Quick accessibility and performance scan of the user's open web page (allowed sites). Accessibility: missing alt " +
+      "text, unnamed buttons/links, unlabelled form fields, heading order, missing lang/title, low colour contrast. " +
+      "Performance: first paint, largest paint, layout shift, request count, transfer size, slowest resources — each " +
+      "rated good / needs work / poor. Issues include a selector so you can find the element. Not a full WCAG audit.",
+    { url_contains: z.string().optional().describe("Which tab") },
+    async ({ url_contains }) => resultText(await askBrowser("audit_page", { url_contains }, 30000))
+  );
+
   // ---- 6. page state snapshot -------------------------------------------------------
   server.tool(
     "get_page_state",

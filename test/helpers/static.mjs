@@ -20,6 +20,8 @@ export function startStatic() {
     // A page that overflows sideways on narrow screens (for the responsive test) and one that doesn't.
     if (pathname === "/wide") { res.setHeader("content-type", "text/html"); return res.end("<html><body style='margin:0'><div style='width:900px;height:200px;background:#e8590c;color:#fff;font:700 32px system-ui'>Fixed 900px banner</div></body></html>"); }
     if (pathname === "/fluid") { res.setHeader("content-type", "text/html"); return res.end("<html><body style='margin:0'><div style='height:200px;background:#1c7ed6;color:#fff;font:700 32px system-ui'>Fluid banner</div></body></html>"); }
+    // A page with deliberate accessibility problems (for the audit test).
+    if (pathname === "/a11y") { res.setHeader("content-type", "text/html"); return res.end("<html><head></head><body><h1>Shop</h1><h3>Skipped a level</h3><img src='data:image/gif;base64,R0lGODlhAQABAAAAACw=' width=40 height=40><button id='nameless'></button><input id='email' type='text'><p style='color:#bbb;background:#fff;font:16px system-ui'>Faint grey text</p><a href='/x'>ok link</a></body></html>"); }
     // Fake API for the network/trace/mock tests.
     if (pathname === "/api/ok") { res.setHeader("content-type", "application/json"); res.setHeader("x-request-id", "req-ok-1"); return res.end(JSON.stringify({ items: [1, 2, 3], token: "abc123secret" })); }
     if (pathname === "/api/fail") { res.statusCode = 500; res.setHeader("content-type", "application/json"); res.setHeader("x-request-id", "req-fail-1"); return res.end(JSON.stringify({ error: "db exploded", detail: "connection refused" })); }
