@@ -17,6 +17,9 @@ export function startStatic() {
   const server = http.createServer((req, res) => {
     const { pathname } = new URL(req.url, "http://x");
     if (pathname === "/page") { res.setHeader("content-type", "text/html"); return res.end(DEMO_PAGE); }
+    // A page that overflows sideways on narrow screens (for the responsive test) and one that doesn't.
+    if (pathname === "/wide") { res.setHeader("content-type", "text/html"); return res.end("<html><body style='margin:0'><div style='width:900px;height:200px;background:#e8590c;color:#fff;font:700 32px system-ui'>Fixed 900px banner</div></body></html>"); }
+    if (pathname === "/fluid") { res.setHeader("content-type", "text/html"); return res.end("<html><body style='margin:0'><div style='height:200px;background:#1c7ed6;color:#fff;font:700 32px system-ui'>Fluid banner</div></body></html>"); }
     // Fake API for the network/trace/mock tests.
     if (pathname === "/api/ok") { res.setHeader("content-type", "application/json"); res.setHeader("x-request-id", "req-ok-1"); return res.end(JSON.stringify({ items: [1, 2, 3], token: "abc123secret" })); }
     if (pathname === "/api/fail") { res.statusCode = 500; res.setHeader("content-type", "application/json"); res.setHeader("x-request-id", "req-fail-1"); return res.end(JSON.stringify({ error: "db exploded", detail: "connection refused" })); }

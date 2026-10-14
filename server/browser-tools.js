@@ -126,4 +126,38 @@ export function registerBrowserTools(server, ctx) {
     { url_contains: z.string().optional().describe("Which tab, e.g. 'stripe.com' (default: the active allowed tab)") },
     async ({ url_contains }) => resultText(await askBrowser("design_tokens", { url_contains }, 30000))
   );
+
+  // ---- 5. responsive capture + network throttle -------------------------------------
+  server.tool(
+    "capture_responsive",
+    "Screenshots the user's running app at several screen widths (default phone 375, tablet 768, desktop 1280) and " +
+      "reports, for each, whether the page scrolls sideways (a common mobile bug). Use it after changing layout " +
+      "or CSS to check every size in one call. The browser's size is restored afterwards.",
+    {
+      widths: z.array(z.number().int().min(200).max(3000)).max(4).optional().describe("Screen widths in px (default [375, 768, 1280])"),
+      url_contains: z.string().optional().describe("Which tab"),
+      height: z.number().int().min(300).max(2000).optional().describe("Screen height in px (default 800)"),
+      full_page: z.boolean().optional().describe("Capture the whole scrollable page, not just the first screen"),
+    },
+    async (args) => {
+      const done = await askBrowser("capture_responsive", args, 60000);
+      if (!done || done.status !== "done") return resultText(done);
+      const { url, title, shots } = done.result;
+      const summary = shots.map(({ dataUrl, ...s }) => s);
+      const content = [{ type: "text", text: JSON.stringify({ url, title, sizes: summary, sideways_scroll_at: summary.filter((s) => s.overflowX).map((s) => s.width) }, null, 2) }];
+      for (const s of shots) { content.push({ type: "text", text: `${s.width}px wide${s.overflowX ? " — scrolls sideways!" : ""}` }); const img = imageBlock(s.dataUrl); if (img) content.push(img); }
+      return { content };
+    }
+  );
+
+  server.tool(
+    "set_network_throttle",
+    "Slows or cuts the network for the user's running app tab so you can see loading and error states: " +
+      "'slow-3g', 'fast-3g', 'offline', or 'none' to go back to normal. Remember to set 'none' when done.",
+    {
+      profile: z.enum(["slow-3g", "fast-3g", "offline", "none"]).describe("Network speed to emulate"),
+      url_contains: z.string().optional().describe("Which tab"),
+    },
+    async (args) => resultText(await askBrowser("network_throttle", args))
+  );
 }
