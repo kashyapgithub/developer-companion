@@ -48,16 +48,47 @@ const shapes = await ed.evaluate(() => window.__uiSketch.controller.state.shapes
 t("Draw on it adds the frame to the canvas (once)", shapes.length === 1 && shapes[0].meta?.kind === "video-frame" && shapes[0].meta.expected === "Make it blue", `count=${shapes.length} ` + JSON.stringify(shapes[0]?.meta));
 await w.click("#discard"); await wait(300);
 t("discard resumes without saving a moment", (await w.evaluate(() => window.__dcVideo.state().moments)).length === 2);
+
+// ---- annotating a paused frame: draw an arrow + box, save, agent sees them burned in ----
+{
+  const w2 = w;
+  await w2.click("#pause"); await wait(400);
+  const box = await w2.$eval("#ann-canvas", (c) => { const r = c.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; });
+  const drag = async (x1, y1, x2, y2) => { await w2.mouse.move(box.x + box.w * x1, box.y + box.h * y1); await w2.mouse.down(); await w2.mouse.move(box.x + box.w * (x1 + x2) / 2, box.y + box.h * (y1 + y2) / 2, { steps: 4 }); await w2.mouse.move(box.x + box.w * x2, box.y + box.h * y2, { steps: 4 }); await w2.mouse.up(); };
+  await drag(0.1, 0.1, 0.5, 0.5);                                         // arrow (default tool)
+  await w2.evaluate(() => document.querySelector("[data-ann-tool=box]").click());
+  await drag(0.55, 0.55, 0.9, 0.9);                                       // box
+  const px = () => w2.$eval("#ann-canvas", (c) => { const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; let n = 0; for (let i = 3; i < d.length; i += 4) if (d[i]) n++; return n; });
+  const both = await px();
+  t("drawing paints the overlay", both > 200, String(both));
+  await w2.evaluate(() => document.getElementById("ann-undo").click());
+  const afterUndo = await px();
+  t("undo removes the last mark", afterUndo > 0 && afterUndo < both, String(afterUndo));
+  await w2.evaluate(() => document.querySelector("[data-ann-tool=box]").click());
+  await drag(0.55, 0.55, 0.9, 0.9);
+  await w2.type("#expected", "Highlight is in the wrong place");
+  await w2.click("#save-moment"); await wait(800);
+  const saved = (await w2.evaluate(() => window.__dcVideo.state().moments)).at(-1);
+  t("moment carries a note of what was drawn", saved.annotations === "1 arrow, 1 box", saved.annotations);
+  t("saved frame has the red marks burned in", await w2.evaluate(async (src) => {
+    const img = new Image(); img.src = src; await img.decode();
+    const c = document.createElement("canvas"); c.width = img.naturalWidth; c.height = img.naturalHeight; const g = c.getContext("2d"); g.drawImage(img, 0, 0);
+    const d = g.getImageData(0, 0, c.width, c.height).data; let red = 0;
+    for (let i = 0; i < d.length; i += 4) if (d[i] > 200 && d[i + 1] < 90 && d[i + 2] < 90) red++;
+    return red > 150;
+  }, saved.frame));
+}
 await w.click("#stop"); await wait(3500);
 const result = await w.$eval("#result", (e) => e.textContent);
-t("window reports success", /Sent: 2 moments/.test(result), result);
+t("window reports success", /Sent: 3 moments/.test(result), result);
 
 const res = await client.callTool({ name: "get_video_review", arguments: {} });
 const doc = JSON.parse(res.content[0].text);
-t("agent sees both moments", doc.moments.length === 2, JSON.stringify(doc.moments[0]));
+t("agent sees both moments", doc.moments.length === 3, JSON.stringify(doc.moments[0]));
 t("expected vs actual carried over", /full width/.test(doc.moments[0].expected) && /nothing happens/.test(doc.moments[0].actual));
-t("frames come back as images", res.content.filter((c) => c.type === "image").length === 2);
+t("frames come back as images", res.content.filter((c) => c.type === "image").length === 3);
 t("video file saved and non-empty", doc.video_file && fs.statSync(doc.video_file).size > 2000, doc.video_file);
+t("agent is told what was drawn", /1 arrow, 1 box/.test(JSON.stringify(doc.moments[2])) && res.content.some((c) => c.type === "text" && /drew on this frame/.test(c.text)));
 t("log recording id is linked", !!doc.log_recording_id);
 await browser.close(); await client.close();
 for (const [c, n] of out) console.log((c ? "PASS " : "FAIL ") + n);

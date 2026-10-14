@@ -514,6 +514,7 @@ function startMcpServer() {
     "get_video_review",
     "Returns a screen recording the user made while reviewing their app, with the moments they paused on. " +
       "Each moment has the time, a screenshot of that exact frame, what the user WANTS ('expected') and what is " +
+      "(the user may have drawn arrows/boxes on the frame to point at the problem; 'annotations' says what) " +
       "ACTUALLY happening ('actual'). Start from the moments: compare each frame with the expectation and fix the " +
       "difference. The full video file path is included for tools that can watch video. If a log recording was " +
       "captured at the same time, its id is given: read it with get_latest_recording.",
@@ -525,13 +526,13 @@ function startMcpServer() {
       const summary = {
         id: doc.id, duration_seconds: doc.durationSeconds, source: doc.source || null,
         video_file: doc.video_file, log_recording_id: doc.recordingId || null,
-        moments: doc.moments.map((m, i) => ({ n: i + 1, at: m.at, expected: m.expected, actual: m.actual, note: m.note || undefined })),
+        moments: doc.moments.map((m, i) => ({ n: i + 1, at: m.at, expected: m.expected, actual: m.actual, note: m.note || undefined, annotations: m.annotations || undefined })),
       };
       const content = [{ type: "text", text: JSON.stringify(summary, null, 2) }];
       frames.slice(0, MAX_SHOTS_RETURNED + 4).forEach((data, i) => {
         if (!data) return;
         const m = doc.moments[i];
-        content.push({ type: "text", text: `Moment ${i + 1} at ${m.at}\nWANTED: ${m.expected || "(not written)"}\nHAPPENING: ${m.actual || "(not written)"}` });
+        content.push({ type: "text", text: `Moment ${i + 1} at ${m.at}\nWANTED: ${m.expected || "(not written)"}\nHAPPENING: ${m.actual || "(not written)"}${m.annotations ? `\nThe user drew on this frame (${m.annotations}) to point at the problem area.` : ""}` });
         content.push({ type: "image", data, mimeType: "image/jpeg" });
       });
       return { content };

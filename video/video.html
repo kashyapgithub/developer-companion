@@ -34,7 +34,18 @@
 
     <!-- Step 3: paused on a frame -->
     <section id="paused" hidden>
-      <img id="frame" alt="The paused frame" />
+      <div class="annotate-bar" role="toolbar" aria-label="Annotate the frame">
+        <button type="button" data-ann-tool="arrow" class="on" title="Arrow">↗ Arrow</button>
+        <button type="button" data-ann-tool="box" title="Box">▭ Box</button>
+        <button type="button" data-ann-tool="pen" title="Freehand">✎ Pen</button>
+        <input type="color" id="ann-color" value="#ff3b30" title="Colour" />
+        <button type="button" id="ann-undo" title="Undo last mark">Undo</button>
+        <button type="button" id="ann-clear" title="Remove all marks">Clear</button>
+      </div>
+      <div class="frame-wrap">
+        <img id="frame" alt="The paused frame" />
+        <canvas id="ann-canvas" aria-label="Draw on the frame"></canvas>
+      </div>
       <label>What I want<textarea id="expected" rows="2" placeholder="e.g. The button should be full width and blue"></textarea></label>
       <label>What's happening<textarea id="actual" rows="2" placeholder="e.g. It is small and grey, and nothing happens on click"></textarea></label>
       <div class="controls">

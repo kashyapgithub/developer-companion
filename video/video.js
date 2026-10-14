@@ -10,6 +10,7 @@
 
 import { createRecorder, clock } from "./recorder-core.js";
 import { uploadReview } from "./review-upload.js";
+import { createAnnotator } from "./annotate-overlay.js";
 
 const $ = (id) => document.getElementById(id);
 const SCREENS = ["idle", "live", "paused", "done"];
@@ -22,6 +23,8 @@ let logRecordingId = null;   // set when logs were captured alongside
 let sourceLabel = null;
 let tick = null;
 let pendingFrame = null;     // frame shown on the "paused" screen
+let annotTool = "arrow";     // current annotation tool
+const annotator = createAnnotator($("frame"), $("ann-canvas"), { tool: () => annotTool, color: () => $("ann-color").value });
 
 /** Shows one screen and tags <body> so the timer colour follows the state. */
 function show(screen) {
@@ -84,13 +87,17 @@ function pauseAndAnnotate() {
   recorder.pause();
   pendingFrame = { ...currentMoment(), frame: recorder.grabFrame() };
   $("frame").src = pendingFrame.frame;
+  annotator.clear();
+  $("frame").decode().catch(() => {}).then(() => annotator.fit());   // size the drawing layer once the frame is laid out
   $("expected").value = $("actual").value = "";
   show("paused");
   $("expected").focus();
 }
 
-function saveMoment() {
-  moments.push({ ...pendingFrame, expected: $("expected").value.trim(), actual: $("actual").value.trim() });
+async function saveMoment() {
+  const marks = annotator.describe();
+  const frame = await annotator.flatten(pendingFrame.frame);      // drawings burned into the frame the agent receives
+  moments.push({ ...pendingFrame, frame, ...(marks ? { annotations: marks } : {}), expected: $("expected").value.trim(), actual: $("actual").value.trim() });
   renderMoments();
   resume();
 }
@@ -111,7 +118,7 @@ function resume() {
 async function drawOnIt() {
   const res = await chrome.runtime.sendMessage({
     type: "VIDEO_FRAME_TO_EDITOR",   // to the background, which picks the one editor (a broadcast would add it twice)
-    dataUrl: pendingFrame.frame,
+    dataUrl: await annotator.flatten(pendingFrame.frame),
     name: `Video frame ${pendingFrame.at}`,
     meta: { kind: "video-frame", at: pendingFrame.at, expected: $("expected").value.trim(), actual: $("actual").value.trim() },
   }).catch(() => null);
@@ -142,6 +149,18 @@ function reset() {
   $("to-canvas").textContent = "Draw on it";
   show("idle");
 }
+
+// ---- annotation toolbar ----------------------------------------------------------------
+
+document.querySelectorAll("[data-ann-tool]").forEach((b) => {
+  b.onclick = () => {
+    annotTool = b.dataset.annTool;
+    document.querySelectorAll("[data-ann-tool]").forEach((o) => o.classList.toggle("on", o === b));
+  };
+});
+$("ann-undo").onclick = () => annotator.undo();
+$("ann-clear").onclick = () => annotator.clear();
+addEventListener("resize", () => { if (pendingFrame) annotator.fit(); });
 
 // ---- wiring ---------------------------------------------------------------------------
 
