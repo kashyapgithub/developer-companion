@@ -27,6 +27,9 @@ import { extractTokensInPage, tokensFromRaw } from "./lib/agent-tools/design-tok
 import { captureForRecording, restoreRecording, startRecording, stopRecording, retrySend, addMarker, getRecordingState, isRecording } from "./lib/recording.js";
 import { setHoverEnabled, isHoverEnabled, repairHoverRegistration } from "./lib/hover-manager.js";
 import { getForwardConfig, setForwardConfig, DEFAULT_FORWARD_CONFIG } from "./lib/forward-config.js";
+import { initConsoleStream, setStreaming, isStreaming } from "./lib/console-stream.js";
+
+initConsoleStream();   // load the "Stream console to agent" switch
 
 const CANVAS_URL = chrome.runtime.getURL("editor/editor.html");
 const DASHBOARD_URL = chrome.runtime.getURL("overlay/overlay.html");
@@ -295,6 +298,16 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message.type === "HOVER_STATUS") {
     isHoverEnabled().then((enabled) => sendResponse({ enabled }));
     return true;
+  }
+
+  // "Stream console to agent" switch (see lib/console-stream.js).
+  if (message.type === "STREAM_SET") {
+    setStreaming(!!message.enabled).then((on) => sendResponse({ ok: true, enabled: on }));
+    return true;
+  }
+  if (message.type === "STREAM_STATUS") {
+    sendResponse({ ok: true, enabled: isStreaming() });
+    return false;
   }
 
   // Screenshot the page the user is working on (see lib/tab-capture.js).

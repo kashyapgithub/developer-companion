@@ -56,6 +56,9 @@
 #toolbar .companion-btn:hover { color: var(--text); background: var(--raised-hover); }
 #toolbar .companion-btn svg { flex: none; }
 #toolbar .companion-btn.hover-toggle.active { color: var(--ok); background: rgba(95, 208, 138, 0.12); }
+/* Stream console: red (like recording) while it is sharing everything with the agent */
+#toolbar .companion-btn.stream-toggle.active { color: #ff6b5e; background: rgba(229, 100, 90, 0.14); }
+#toolbar .companion-btn.stream-toggle.active { animation: rec-pulse 1.8s ease-in-out infinite; }
 .companion-badge {
   min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px;
   background: var(--danger); color: #fff; font-size: 10px; font-weight: 700; line-height: 16px; text-align: center;

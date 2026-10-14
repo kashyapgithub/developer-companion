@@ -249,6 +249,26 @@ export function queryRecentLogs({ app, level, minutes = 60, limit = 100 } = {}) 
   return rows.map(formatLogRow);
 }
 
+/** Id of the newest log row (0 when there are none): the starting cursor for "from now on". */
+export function latestLogId() {
+  return getDb().prepare("SELECT COALESCE(MAX(id), 0) AS id FROM logs").get().id;
+}
+
+/**
+ * Rows newer than `afterId` (oldest first) — the engine of watch_console.
+ * @param {number} afterId  only rows with a larger id
+ * @param {{app?:string, levels?:string[], environment?:string, limit?:number}} filters
+ */
+export function queryLogsAfter(afterId, { app, levels, environment, limit = 100 } = {}) {
+  let sql = "SELECT * FROM logs WHERE id > ?";
+  const params = [Number(afterId) || 0];
+  if (app) { sql += " AND app_name = ?"; params.push(app); }
+  if (environment) { sql += " AND environment = ?"; params.push(environment); }
+  if (levels?.length) { sql += ` AND level IN (${levels.map(() => "?").join(",")})`; params.push(...levels.map((l) => l.toLowerCase())); }
+  sql += " ORDER BY id ASC LIMIT ?"; params.push(limit);
+  return getDb().prepare(sql).all(...params).map(formatLogRow);
+}
+
 /** Rows between two ISO times (oldest first), optionally one environment ("server" or "browser"). */
 export function queryLogsBetween(fromIso, toIso, { environment, limit = 100 } = {}) {
   let sql = "SELECT * FROM logs WHERE created_at >= ? AND created_at <= ?";
