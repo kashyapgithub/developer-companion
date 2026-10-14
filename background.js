@@ -23,6 +23,7 @@ import { toggleXray, handleXraySend } from "./lib/xray.js";
 import { openVideoWindow, sendImageToEditor } from "./lib/video-window.js";
 import { startPicking, handlePicked, handleCancelled } from "./lib/element-picker.js";
 import { captureTab, trackWebTabs, resolveTargetTab } from "./lib/tab-capture.js";
+import { extractTokensInPage, tokensFromRaw } from "./lib/agent-tools/design-tokens.js";
 import { captureForRecording, restoreRecording, startRecording, stopRecording, retrySend, addMarker, getRecordingState, isRecording } from "./lib/recording.js";
 import { setHoverEnabled, isHoverEnabled, repairHoverRegistration } from "./lib/hover-manager.js";
 import { getForwardConfig, setForwardConfig, DEFAULT_FORWARD_CONFIG } from "./lib/forward-config.js";
@@ -299,6 +300,19 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   // Screenshot the page the user is working on (see lib/tab-capture.js).
   if (message.type === "CAPTURE_TAB") {
     captureTab({ senderTab: _sender?.tab, maxWidth: message.maxWidth }).then(sendResponse);
+    return true;
+  }
+
+  // "Design tokens of this page" from the Add screenshot menu (see lib/agent-tools/design-tokens.js).
+  if (message.type === "DESIGN_TOKENS") {
+    (async () => {
+      const tab = await resolveTargetTab(_sender?.tab);
+      if (!tab) return { ok: false, error: "Open the page first, then try again." };
+      try {
+        const [{ result }] = await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: extractTokensInPage });
+        return { ok: true, ...tokensFromRaw(result) };
+      } catch (err) { return { ok: false, error: `Couldn't read that page's styles: ${err?.message || err}` }; }
+    })().then(sendResponse);
     return true;
   }
 

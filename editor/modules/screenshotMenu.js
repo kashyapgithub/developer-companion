@@ -8,6 +8,7 @@
  *   Capture this tab       screenshots the web page you were just on (no picker)
  *   Pick an element…       point at part of a page: screenshot + HTML + styles
  *   Capture screen/window… browser's screen-share picker, grabs one frame
+ *   Design tokens…         copies the page's colours, fonts, radii, spacing as CSS + Tailwind
  *
  * Shortcut Ctrl/Cmd+Shift+K: paste from the clipboard if it holds an image,
  * otherwise open the file picker — the one-keystroke path.
@@ -36,6 +37,18 @@ async function captureCurrentTab(imageImport) {
   return added ? "added" : "Couldn't add the capture to the canvas.";
 }
 
+/** Copies the open page's design tokens (CSS variables + Tailwind) to the clipboard; resolves to a status message. */
+async function copyDesignTokens() {
+  if (!(await chrome.permissions.contains({ origins: PAGE_ORIGINS }))) {
+    if (!(await chrome.permissions.request({ origins: PAGE_ORIGINS }))) return "Reading a page's styles needs permission to see web pages.";
+  }
+  const res = await chrome.runtime.sendMessage({ type: "DESIGN_TOKENS" });
+  if (!res?.ok) return res?.error || "Couldn't read the page's styles.";
+  try { await navigator.clipboard.writeText(`${res.css}\n\n${res.tailwind}`); }
+  catch { return "Read the styles, but Chrome blocked the clipboard — click the page and try again."; }
+  return `Design tokens copied (${res.summary})`;
+}
+
 export function wireScreenshotMenu({ buttonEl, menuEl, statusEl, imageImport, elementPicker }) {
   let statusTimer = null;
   const say = (text) => {
@@ -50,6 +63,7 @@ export function wireScreenshotMenu({ buttonEl, menuEl, statusEl, imageImport, el
   async function run(action) {
     close();
     if (action === "upload") { imageImport.pick(); return; }
+    if (action === "tokens") { say(await copyDesignTokens()); return; }
     if (action === "element") { const r = await elementPicker.start(); say(r === "started" ? "Click an element on the page — Esc cancels." : r); return; }
     const result = action === "paste" ? await imageImport.pasteFromClipboard()
       : action === "tab" ? await captureCurrentTab(imageImport)

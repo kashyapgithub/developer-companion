@@ -13,6 +13,7 @@
 
 import { z } from "zod";
 import { pickRequest, buildTrace } from "./trace.js";
+import { saveBaseline, readBaseline, diffPng } from "./visual-diff.js";
 
 const NO_ANSWER = "The browser didn't answer. Is Chrome open with the Developer Companion extension, and is the app open on an allowed site (localhost by default)?";
 
@@ -72,5 +73,57 @@ export function registerBrowserTools(server, ctx) {
       if (!request && !request_id && !trace.server_logs.length) return text(NO_ANSWER);
       return text(JSON.stringify(trace, null, 2));
     }
+  );
+
+  // ---- 3. visual diff -------------------------------------------------------------
+  server.tool(
+    "visual_diff",
+    "Compares the running app's screen with a saved 'before' screenshot and shows exactly what changed: " +
+      "percent of pixels changed, the changed regions as boxes (x, y, width, height), and a diff image with " +
+      "changes in red. First call saves the baseline; after editing code call it again. Use it to check that " +
+      "a CSS/UI change did what you meant and nothing else moved. Pass update_baseline:true to accept the " +
+      "current look as the new baseline.",
+    {
+      name: z.string().optional().describe("Baseline name, e.g. 'settings-page' (default 'default'); use one per page or state"),
+      url_contains: z.string().optional().describe("Which tab, e.g. ':3000/settings'"),
+      max_width: z.number().int().min(300).max(2000).optional().describe("Screenshot width for both baseline and compare (default 1000)"),
+      update_baseline: z.boolean().optional().describe("Replace the baseline with the current screen"),
+      tolerance: z.number().int().min(0).max(80).optional().describe("Colour difference ignored per pixel, 0-255 (default 16)"),
+    },
+    async ({ name = "default", url_contains, max_width = 1000, update_baseline, tolerance }) => {
+      const done = await askBrowser("capture_tab", { url_contains, max_width, format: "png" }, 30000);
+      if (!done) return text(NO_ANSWER);
+      if (done.status !== "done" || !done.result?.dataUrl) return text(`Couldn't capture: ${done.result?.error || "unknown error"}`);
+      const current = Buffer.from(done.result.dataUrl.split(",")[1], "base64");
+      const base = readBaseline(name);
+
+      if (!base || update_baseline) {
+        saveBaseline(name, current);
+        return { content: [
+          { type: "text", text: JSON.stringify({ baseline: name, saved: true, message: base ? "Baseline updated." : "Baseline saved. Make your change, then call visual_diff again with the same name.", page: done.result.url }, null, 2) },
+          imageBlock(done.result.dataUrl),
+        ] };
+      }
+      let result;
+      try { result = diffPng(base.buffer, current, { tolerance }); }
+      catch (e) { return text(`Couldn't compare the screenshots (${e.message}). Call again with update_baseline:true.`); }
+      const verdict = result.changedPercent === 0 && !result.sizeChanged ? "No visual change." : `${result.changedPercent}% of the screen changed in ${result.regions.length} region(s).`;
+      return { content: [
+        { type: "text", text: JSON.stringify({ baseline: name, baseline_saved_at: base.savedAt, page: done.result.url, verdict,
+          changed_percent: result.changedPercent, size_changed: result.sizeChanged, baseline_size: result.baselineSize, current_size: result.currentSize, regions: result.regions }, null, 2) },
+        imageBlock("data:image/png;base64," + result.diffPng.toString("base64")),
+      ] };
+    }
+  );
+
+  // ---- 4. design tokens -----------------------------------------------------------
+  server.tool(
+    "get_design_tokens",
+    "Measures the look of the user's open web page (allowed sites): the colours, fonts, font sizes, border radii, " +
+      "shadows and spacing it actually uses, ranked by how much they appear, plus the site's own CSS variables. " +
+      "Returns ready-to-paste CSS custom properties and a Tailwind theme.extend snippet. Use it to match an existing " +
+      "design or to turn a site the user likes into tokens for their project.",
+    { url_contains: z.string().optional().describe("Which tab, e.g. 'stripe.com' (default: the active allowed tab)") },
+    async ({ url_contains }) => resultText(await askBrowser("design_tokens", { url_contains }, 30000))
   );
 }
