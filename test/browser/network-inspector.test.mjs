@@ -19,6 +19,12 @@ await page.bringToFront();
 
 const ask = async (args = {}) => JSON.parse((await client.callTool({ name: "get_network_requests", arguments: args }, undefined, { timeout: 60000 })).content[0].text);
 
+// Warm-up: the first ask makes sure the tab is being watched (retrying while the extension's command loop starts).
+for (let i = 0; i < 10; i++) {
+  const text = (await client.callTool({ name: "get_network_requests", arguments: { limit: 1 } }, undefined, { timeout: 60000 })).content[0].text;
+  if (text.startsWith("{")) break; await wait(1000);
+}
+
 // The app makes a good call and a failing one (with a secret header and password in the body).
 await page.evaluate(async () => {
   await fetch("/api/ok", { headers: { "X-Trace": "t1" } });

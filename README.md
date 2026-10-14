@@ -142,7 +142,7 @@ Press the video button in the top bar. A small window opens:
 
 1. **Choose what to record** and pick the browser tab with your app. Console and network logs are captured alongside (untick to skip).
 2. Use your app as normal. When you reach the moment that matters, press **Pause & annotate**. The video freezes on that exact frame.
-3. Write **What I want** and **What's happening**. **Save moment & resume** keeps recording; **Draw on it** puts the frame on your canvas so you can circle things.
+3. Write **What I want** and **What's happening**. You can also draw straight on the paused frame with **Arrow**, **Box** or **Pen** (colour picker, Undo, Clear); the marks are burned into the frame your agent receives. **Save moment & resume** keeps recording; **Draw on it** puts the frame on your canvas instead.
 4. **Mark moment** is the one-click version while recording: it keeps the frame without stopping.
 5. **Stop & send.** The video file and every moment go to your agent.
 
@@ -167,6 +167,22 @@ Found a design you love? Save it, sort it, and tell your agent *"match the style
 - **Use:** double-click a thumbnail (or **Add to canvas**) to put it on the canvas next to your sketch.
 - **Your agent:** `get_inspiration` returns the images with their notes and source URLs. Ask for a folder by name, search by text, or call it with no arguments to see your folders.
 - **Where it lives:** plain files in `~/.developer-companion/inspiration/` on the machine running the bridge, so it survives reinstalling the extension.
+
+### Full-stack debugging tools (agent side)
+These are for the agent, not buttons. Once connected, just ask in plain words. They only touch tabs on your allowed sites (localhost by default).
+
+- **Network inspector** (`get_network_requests`): "what did POST /api/orders send and get back?" Headers and JSON bodies, newest first, filter by URL, method or `failed`/`4xx`/`5xx`. Passwords, tokens and cookies are masked. Kept in memory only.
+- **Front-to-back trace** (`get_trace`): joins a failing browser request with your server's log lines by request id and time. Run your dev server through the wrapper so its output is captured: `node /full/path/to/developer-companion/server/tail.js --name api -- npm run dev` (it prints everything as usual and also sends the lines to the bridge).
+- **Visual diff** (`visual_diff`): saves a baseline screenshot by name, then later reports what changed, with a diff image and the changed regions. Pass `update_baseline: true` to accept a change.
+- **Design tokens** (`get_design_tokens`, also **Add screenshot > Design tokens of this page**): the colours, fonts, radii, shadows and spacing a page really uses, as CSS variables and a Tailwind snippet.
+- **Responsive check** (`capture_responsive`): screenshots at 375 / 768 / 1280 (or your widths) and flags pages that scroll sideways.
+- **Network throttle** (`set_network_throttle`): `slow-3g`, `fast-3g`, `offline` or `none`, to see loading and error states.
+- **Page state** (`get_page_state`): localStorage, sessionStorage, cookie names (never values) and framework globals such as `__NEXT_DATA__`. Secrets are masked.
+- **Accessibility + performance** (`audit_page`): missing alt text, unnamed buttons, unlabelled fields, heading order, low contrast, plus FCP, LCP, layout shift and page weight, each rated good / needs work / poor. A quick scan, not a full WCAG audit.
+- **API mocks** (`set_mock`, `list_mocks`, `clear_mocks`): answer a request with a fake 500, an empty list, a slow reply or a dropped connection to see how your UI copes. `from_recorded` starts from the last real response. Mocks last until cleared or the tab closes.
+
+### Session handoff: move your work to another machine
+Open the gear (Agent settings) and press **Export handoff**. You get one `.json` file with your sketch, X-ray selection, video review notes and frames (not the video file), and your inspiration library. On the other computer or VM, press **Import handoff** and pick the file. Importing twice doesn't duplicate your inspiration images. Your agent can also create the file itself with `export_handoff`.
 
 ### Overlay your sketch on the live app
 Press **Overlay** to lay your sketch (or the frame you have selected) over the page you were just on, semi-transparent, so you can compare design and reality. The page stays clickable. A small bar on the page has an opacity slider, **Align** (drag the sketch into place) and ✕. Press Overlay again to remove it.
@@ -212,6 +228,16 @@ Click **GitHub** to browse your repositories with language filters, search, tags
 | `send_browser_command` | Ask the browser to flush logs, attach to a tab, or report status, and get the answer back. |
 | `get_inspiration` | Your saved inspiration screenshots, by folder or search, with your notes and source URLs. |
 | `get_companion_status` | Server health and how much is stored. |
+| `get_network_requests` | Recorded requests with headers and bodies (secrets masked), filtered by URL, method or status. |
+| `get_trace` | One failing request joined with the server log lines it caused. |
+| `visual_diff` | Compare the live page with a saved baseline: diff image and changed regions. |
+| `get_design_tokens` | The colours, fonts, spacing and shadows a page uses, as CSS and Tailwind. |
+| `capture_responsive` | Screenshots at several widths, with a sideways-scroll check. |
+| `set_network_throttle` | Slow 3G, fast 3G, offline or normal network for your app tab. |
+| `get_page_state` | localStorage, sessionStorage, cookie names and framework state, secrets masked. |
+| `audit_page` | Quick accessibility checks and load performance. |
+| `set_mock`, `list_mocks`, `clear_mocks` | Fake API responses (errors, empty, slow, failing) for your running app. |
+| `export_handoff` | Packs the whole session into one file to hand over. |
 
 You can also query logs from a terminal:
 
@@ -241,9 +267,9 @@ node server/query_logs.js groups
 | `hover/` | The floating-window content scripts. |
 | `overlay/` | The GitHub dashboard. |
 | `logs/` | The log viewer and settings page. |
-| `lib/` | Extension background modules (log capture, allowlist, commands, hover manager). |
+| `lib/` | Extension background modules (log capture, allowlist, commands, hover manager). `lib/agent-tools/` holds one small file per agent browser tool (network, tokens, audit, mocks…). |
 | `server/` | The local bridge and MCP server, plus the installer, agent-connect and LAN tools. |
-| `video/` | The Video review window: recording, pause, notes. |
+| `video/` | The Video review window: recording, pause, notes, drawing on frames. |
 | `picker/`, `xray/`, `sketch-overlay/` | Scripts injected into a page for element picking, X-ray mode and the sketch overlay. |
 | `test/` | Tests: `node/` (fast) and `browser/` (real Chromium with the real extension). |
 | `background.js` | The extension's service worker. |

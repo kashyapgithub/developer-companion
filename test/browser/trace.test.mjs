@@ -39,8 +39,15 @@ for (let i = 0; i < 30; i++) {
   if (/127\.0\.0\.1/.test(st)) break; await wait(500);
 }
 await wait(1500); // attach finishes a moment after the status shows the site
-await page.evaluate(() => fetch("http://127.0.0.1:5992/api/fail", { method: "POST", body: "{}" }).catch(() => {})); // the click that "fails"
-await wait(4500);
+// The "click that fails". Retry until the inspector has recorded it with a status: the debugger
+// can finish attaching a little after the status shows the site, and a request made before that is (rightly) not seen.
+for (let i = 0; i < 5; i++) {
+  await page.evaluate(() => fetch("http://127.0.0.1:5992/api/fail", { method: "POST", body: "{}" }).catch(() => {}));
+  await wait(1500);
+  const seen = (await client.callTool({ name: "get_network_requests", arguments: { url_contains: "/api/fail", limit: 1 } }, undefined, { timeout: 60000 })).content[0].text;
+  if (/"status": 500/.test(seen)) break;
+}
+await wait(2500);   // let the server's log lines arrive too
 
 t("tail.js passes output through to the terminal unchanged", /POST \/api\/fail 500/.test(tailOut) && /connection refused/.test(tailOut));
 const tr = JSON.parse((await client.callTool({ name: "get_trace", arguments: { url_contains: "/api/fail" } }, undefined, { timeout: 60000 })).content[0].text);
