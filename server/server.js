@@ -47,6 +47,8 @@ import { buildBundle, describeBundle, saveBundleFile } from "./handoff.js";
 import { searchItems, readItemImage } from "./inspiration.js";
 import { registerBrowserTools } from "./browser-tools.js";
 import { registerWatchConsole } from "./watch-console.js";
+import { handleApiClient } from "./api/routes.js";
+import { registerApiTools } from "./api/tools.js";
 
 const PORT = Number(process.env.PORT) || Number(process.env.LOG_SERVER_PORT) || 5959;
 const MAX_BODY_BYTES = 60 * 1024 * 1024; // 60MB for large PNG wireframes
@@ -174,6 +176,9 @@ function startHttpReceiver() {
 
     // Session handoff: export / import everything the agent sees as one file
     if (handleHandoff(req, res, pathname, url.searchParams, { readJsonBody, respondJson })) return;
+
+    // API client (collections, environments, send requests): the popup window talks to these
+    if (handleApiClient(req, res, pathname, { readJsonBody, respondJson })) return;
 
     // Inspiration library (folders of saved screenshots)
     if (handleInspiration(req, res, pathname, { readJsonBody, respondJson })) return;
@@ -640,6 +645,7 @@ function startMcpServer() {
 
   registerBrowserTools(server, { askBrowser });
   registerWatchConsole(server);
+  registerApiTools(server);
 
   server.tool(
     "start_recording",
