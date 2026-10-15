@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>API client</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="../editor/ui/tokens.css" />
+  <link rel="stylesheet" href="api.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- Left: collections + history -->
+    <aside id="sidebar">
+      <div class="side-actions">
+        <button id="new-col">+ Collection</button>
+        <button id="import-btn">Import</button>
+        <button id="captured-btn" title="Turn calls your app made into requests">From traffic</button>
+      </div>
+      <div id="tree"></div>
+      <details id="history-wrap">
+        <summary>History</summary>
+        <button id="clear-history" class="link">Clear</button>
+        <div id="history"></div>
+      </details>
+    </aside>
+
+    <!-- Right: environment bar, request, response -->
+    <main>
+      <header id="topbar">
+        <h1>API client</h1>
+        <span class="spacer"></span>
+        <label class="inline">Environment <select id="env-select"></select></label>
+        <button id="env-edit" title="Edit the selected environment">Edit</button>
+        <button id="env-new" title="Create a new environment">+ New</button>
+      </header>
+
+      <section id="request">
+        <div class="urlbar">
+          <select id="method">
+            <option>GET</option><option>POST</option><option>PUT</option><option>PATCH</option><option>DELETE</option><option>HEAD</option><option>OPTIONS</option>
+          </select>
+          <input id="url" placeholder="https://api.example.com/users  or  {{baseUrl}}/users" spellcheck="false" />
+          <button id="send" class="send">Send</button>
+        </div>
+        <div class="savebar">
+          <input id="req-name" placeholder="Request name" spellcheck="false" />
+          <select id="save-col" title="Collection to save into"></select>
+          <button id="save">Save</button>
+          <button id="copy-curl" title="Copy as curl">Copy curl</button>
+          <span id="dirty" class="muted"></span>
+        </div>
+
+        <div data-tabs="req">
+          <nav class="tabs"><button data-tab="params">Params</button><button data-tab="headers">Headers</button><button data-tab="auth">Auth</button><button data-tab="body">Body</button><button data-tab="tests">Tests</button><button data-tab="extract">Extract</button></nav>
+          <div data-pane="params"><div id="params" class="kv"></div></div>
+          <div data-pane="headers"><div id="headers" class="kv"></div></div>
+          <div data-pane="auth">
+            <label>Type <select id="auth-type"><option value="none">None</option><option value="bearer">Bearer token</option><option value="basic">Basic</option><option value="apikey">API key</option></select></label>
+            <div id="auth-fields"></div>
+          </div>
+          <div data-pane="body">
+            <label>Type <select id="body-mode"><option value="none">None</option><option value="json">JSON</option><option value="text">Text</option><option value="form">Form (urlencoded)</option></select></label>
+            <p id="body-hint" class="empty-hint">This request has no body.</p>
+            <textarea id="body-text" rows="9" spellcheck="false" placeholder='{ "name": "{{name}}" }' hidden></textarea>
+            <button id="beautify" class="link">Beautify JSON</button>
+            <div id="form" class="kv" hidden></div>
+          </div>
+          <div data-pane="tests"><div id="tests"></div></div>
+          <div data-pane="extract"><div id="extract"></div></div>
+        </div>
+      </section>
+
+      <section id="response">
+        <div id="resp-bar" class="resp-bar"></div>
+        <div data-tabs="resp">
+          <nav class="tabs"><button data-tab="body">Body</button><button data-tab="headers">Headers</button><button id="tests-tab" data-tab="tests">Tests</button></nav>
+          <div data-pane="body" id="resp-body"></div>
+          <div data-pane="headers" id="resp-headers"></div>
+          <div data-pane="tests" id="resp-tests"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="dlg-env"></dialog>
+  <dialog id="dlg-import"></dialog>
+  <dialog id="dlg-captured"></dialog>
+  <dialog id="dlg-run"></dialog>
+  <dialog id="dlg-ask"></dialog>
+  <div id="toast" class="toast" role="status"></div>
+  <script type="module" src="api.js"></script>
+</body>
+</html>

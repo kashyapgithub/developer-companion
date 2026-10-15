@@ -190,6 +190,17 @@ These are for the agent, not buttons. Once connected, just ask in plain words. T
 - **Accessibility + performance** (`audit_page`): missing alt text, unnamed buttons, unlabelled fields, heading order, low contrast, plus FCP, LCP, layout shift and page weight, each rated good / needs work / poor. A quick scan, not a full WCAG audit.
 - **API mocks** (`set_mock`, `list_mocks`, `clear_mocks`): answer a request with a fake 500, an empty list, a slow reply or a dropped connection to see how your UI copes. `from_recorded` starts from the last real response. Mocks last until cleared or the tab closes.
 
+### API client: a Postman replacement, built in
+Press the **API** button in the editor's top bar. A small window opens (not a tab) with:
+- **Collections** with folders, and a **history** of what you sent.
+- **Environments** with `{{variables}}` (plus `{{$guid}}`, `{{$timestamp}}`, `{{$isoTimestamp}}`, `{{$randomInt}}`). Pick the active one in the top bar.
+- A request builder: method, URL, params, headers, auth (bearer, basic, API key) and body (JSON, text, form).
+- **Tests**: simple checks on the response (status, JSON field, header, body, time). No scripting needed.
+- **Extract**: save a value from a response (for example a login token) into the environment, so the next request can use `{{token}}`. **Run collection** (the ▶ next to a collection) runs everything in order.
+- **Import** from a curl command or a Postman v2.1 collection / environment, or pull calls your app made from **From traffic**. **Copy curl** goes the other way.
+
+Requests are sent by the local bridge, so they come from the computer the bridge runs on (matters if it runs in a VM). Your agent can use the same collections with `api_list`, `api_run`, `api_run_collection` and `api_save`. The agent may only call `localhost` and hosts that appear in your environments or collections; you can call anything from the window. Saved data lives in the bridge's store folder under `api/`.
+
 ### Session handoff: move your work to another machine
 Open the gear (Agent settings) and press **Export handoff**. You get one `.json` file with your sketch, X-ray selection, video review notes and frames (not the video file), and your inspiration library. On the other computer or VM, press **Import handoff** and pick the file. Importing twice doesn't duplicate your inspiration images. Your agent can also create the file itself with `export_handoff`.
 
@@ -246,6 +257,7 @@ Click **GitHub** to browse your repositories with language filters, search, tags
 | `get_page_state` | localStorage, sessionStorage, cookie names and framework state, secrets masked. |
 | `audit_page` | Quick accessibility checks and load performance. |
 | `set_mock`, `list_mocks`, `clear_mocks` | Fake API responses (errors, empty, slow, failing) for your running app. |
+| `api_list`, `api_run`, `api_run_collection`, `api_save` | Use your API client collections: list them, send a request, run a whole collection with its tests, save a new request. |
 | `watch_console` | Follows your browser live (needs **Stream** on): console, network requests with bodies, navigation and clicks, with a cursor to continue. |
 | `export_handoff` | Packs the whole session into one file to hand over. |
 
@@ -278,6 +290,7 @@ node server/query_logs.js groups
 | `overlay/` | The GitHub dashboard. |
 | `logs/` | The log viewer and settings page. |
 | `lib/` | Extension background modules (log capture, allowlist, commands, hover manager). `lib/agent-tools/` holds one small file per agent browser tool (network, tokens, audit, mocks…). |
+| `api/` | The API client window (request editor, collections, environments, import). Its engine is in `server/api/`. |
 | `server/` | The local bridge and MCP server, plus the installer, agent-connect and LAN tools. |
 | `video/` | The Video review window: recording, pause, notes, drawing on frames. |
 | `picker/`, `xray/`, `sketch-overlay/` | Scripts injected into a page for element picking, X-ray mode and the sketch overlay. |

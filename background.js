@@ -21,6 +21,7 @@ import { startCommandLoop } from "./lib/commands.js";
 import { showSketchOverlay, hideSketchOverlay } from "./lib/sketch-overlay.js";
 import { toggleXray, handleXraySend } from "./lib/xray.js";
 import { openVideoWindow, sendImageToEditor } from "./lib/video-window.js";
+import { openApiWindow, capturedForApiClient } from "./lib/api-window.js";
 import { startPicking, handlePicked, handleCancelled } from "./lib/element-picker.js";
 import { captureTab, trackWebTabs, resolveTargetTab } from "./lib/tab-capture.js";
 import { extractTokensInPage, tokensFromRaw } from "./lib/agent-tools/design-tokens.js";
@@ -343,6 +344,15 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message.type === "VIDEO_OPEN") {
     openVideoWindow().then(sendResponse);
     return true;
+  }
+  // API client window (see api/api.js) and the browser calls it can import.
+  if (message.type === "API_OPEN") {
+    openApiWindow().then(sendResponse);
+    return true;
+  }
+  if (message.type === "API_CAPTURED") {
+    sendResponse(capturedForApiClient());
+    return false;
   }
   if (message.type === "VIDEO_FRAME_TO_EDITOR") {
     sendImageToEditor(message).then(sendResponse);
