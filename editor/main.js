@@ -29,6 +29,7 @@ import { wireInspiration } from "./modules/inspiration.js";
 import { wireRecorder } from "./modules/recorder.js";
 import { wireHandoff } from "./modules/handoffUi.js";
 import { wireStreamToggle } from "./modules/streamToggle.js";
+import { wireFlowPanel } from "./modules/flow/flow-panel.js";
 import { applyEmbeddedClass } from "./modules/embedMode.js";
 
 applyEmbeddedClass(); // before first paint, so the floating-window layout doesn't flash
@@ -60,6 +61,7 @@ let palette = null;
 let comments = null;
 let inspect = null;
 let autosave = null;
+let flowPanel = null;
 
 const controller = createToolController({
   canvasEl,
@@ -71,6 +73,7 @@ const controller = createToolController({
     toolbar?.syncFromSelection(state.selection);
     layers?.update(state);
     effectsPanel?.update(state);
+    flowPanel?.update(state);
     dock?.sync(state.currentTool);
     comments?.update(state);
     autosave?.schedule();
@@ -135,6 +138,7 @@ wireHandoff({
   exportBtn: document.getElementById("handoff-export-btn"), importBtn: document.getElementById("handoff-import-btn"),
   fileInput: document.getElementById("handoff-file"), say: (t) => { shotStatus.textContent = t; clearTimeout(shotStatus._t); shotStatus._t = setTimeout(() => { shotStatus.textContent = ""; }, 6000); },
 });
+flowPanel = wireFlowPanel({ buttonEl: document.getElementById("flow-btn"), panelEl: document.getElementById("flow-panel"), controller, engine });
 wireHoverToggle({ buttonEl: document.getElementById("hover-mode-btn") });
 document.getElementById("video-btn")?.addEventListener("click", () => chrome.runtime.sendMessage({ type: "VIDEO_OPEN" }));
 document.getElementById("api-btn")?.addEventListener("click", () => chrome.runtime.sendMessage({ type: "API_OPEN" }));

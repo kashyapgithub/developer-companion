@@ -872,6 +872,13 @@ export function createToolController({ canvasEl, textInputEl, viewport, onChange
     if (sel.length !== 1) return;
     const shape = sel[0];
     if (shape.type === "text") { openTextInput(shape.x, shape.y, shape); return; }
+    if (["rect", "ellipse", "polygon"].includes(shape.type)) { // flow blocks: double-click to name them
+      const text = window.prompt("Label", shape.text || "");
+      if (text === null) return;
+      shape.text = text;
+      commitHistory();
+      return;
+    }
     if (shape.type === "connector") {
       const label = window.prompt("Connector label", shape.label || "");
       if (label === null) return;

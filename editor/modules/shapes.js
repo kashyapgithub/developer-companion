@@ -26,6 +26,7 @@
 import { drawWithEffects } from "./effects.js";
 import { effectsExtent, hasVisibleEffects } from "./effectsModel.js";
 import { pathBounds, hitTestPath, tracePath } from "./path.js";
+import { drawShapeLabel } from "./flow/shape-label.js";
 
 const ACCENT = "#3a5bd9";
 let idCounter = 0;
@@ -581,6 +582,7 @@ function drawShapeBody(ctx, shape, { ignoreOpacity = false } = {}) {
       break;
     }
   }
+  drawShapeLabel(ctx, shape); // flow blocks: the label inside the shape
   ctx.restore();
 }
 

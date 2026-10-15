@@ -85,6 +85,11 @@
         </svg>
       </button>
 
+      <button id="flow-btn" class="companion-btn" aria-pressed="false" title="Explain flow to agent: draw a flowchart (start, steps, decisions) and send it with your explanation">
+        <svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5.5" y="1.5" width="5" height="3.5" rx="1"/><rect x="1.5" y="11" width="5" height="3.5" rx="1"/><rect x="9.5" y="11" width="5" height="3.5" rx="1"/><path d="M8 5v2.5M8 7.5H4v3.5M8 7.5h4v3.5"/></svg>
+        <span class="lbl">Explain flow</span>
+      </button>
+
       <button id="api-btn" class="companion-btn icon-only" title="API client: send requests, keep collections and environments, test responses (opens a window)">
         <svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
           <path d="M2 8h9M8 4.5L11.5 8 8 11.5M14 3v10"/>
@@ -211,6 +216,27 @@
         <div id="fx-menu" class="hidden"></div>
         <div id="fx-scope" class="fx-scope"></div>
         <div id="fx-list"></div>
+      </section>
+
+      <!-- Flow panel (opened from the top bar's "Explain flow" button; see modules/flow/) -->
+      <section id="flow-panel" class="hidden" aria-label="Explain flow">
+        <header class="fx-head">
+          <span>Explain flow to agent</span>
+          <button id="flow-close" class="fx-icon" title="Close">×</button>
+        </header>
+        <div class="flow-body">
+          <p class="flow-hint">Select a block, then press a kind: the new block appears next to it, already joined. Double-click a block or arrow to name it.</p>
+          <div id="flow-kinds" class="flow-kinds"></div>
+          <button id="flow-arrow" type="button" class="flow-arrow" title="Draw an arrow from one block to another">Arrow tool: drag block → block</button>
+          <label class="flow-label">Explain it in your words
+            <textarea id="flow-notes" rows="4" placeholder="e.g. A user signs up, we send an email code. If the code is wrong 3 times we lock the account for 10 minutes."></textarea>
+          </label>
+          <div id="flow-summary" class="flow-summary"></div>
+          <ul id="flow-issues" class="flow-issues"></ul>
+          <details class="flow-code"><summary>What the agent reads (Mermaid)</summary><pre id="flow-mermaid"></pre></details>
+          <button id="flow-send" type="button" class="flow-send" disabled>Explain flow to agent</button>
+          <div id="flow-status" role="status"></div>
+        </div>
       </section>
     </main>
 

@@ -190,6 +190,11 @@ These are for the agent, not buttons. Once connected, just ask in plain words. T
 - **Accessibility + performance** (`audit_page`): missing alt text, unnamed buttons, unlabelled fields, heading order, low contrast, plus FCP, LCP, layout shift and page weight, each rated good / needs work / poor. A quick scan, not a full WCAG audit.
 - **API mocks** (`set_mock`, `list_mocks`, `clear_mocks`): answer a request with a fake 500, an empty list, a slow reply or a dropped connection to see how your UI copes. `from_recorded` starts from the last real response. Mocks last until cleared or the tab closes.
 
+### Explain flow to agent: draw a flowchart and send it
+Press **Explain flow** in the top bar. The panel gives you **Start**, **Step**, **Decision** and **End** blocks. Select a block and press a kind: the new block appears next to it, already joined by an arrow (out of a decision the exits come pre-labelled **Yes** and **No**). Double-click a block or arrow to name it, or use the **Arrow tool** to join blocks yourself. Type the story in your own words, then press **Explain flow to agent**.
+
+Your agent calls `get_latest_flow` and gets your explanation, the flow as Mermaid text and as structured blocks and arrows, a picture, and a list of anything that looks unfinished (a decision with one exit, an unlabeled arrow, a dead end that isn't marked End), so it can ask you instead of guessing.
+
 ### API client: a Postman replacement, built in
 Press the **API** button in the editor's top bar. A small window opens (not a tab) with:
 - **Collections** with folders, and a **history** of what you sent.
@@ -257,6 +262,7 @@ Click **GitHub** to browse your repositories with language filters, search, tags
 | `get_page_state` | localStorage, sessionStorage, cookie names and framework state, secrets masked. |
 | `audit_page` | Quick accessibility checks and load performance. |
 | `set_mock`, `list_mocks`, `clear_mocks` | Fake API responses (errors, empty, slow, failing) for your running app. |
+| `get_latest_flow` | The flowchart you sent with **Explain flow**: your explanation, Mermaid, blocks and arrows, a picture, and anything unfinished. |
 | `api_list`, `api_run`, `api_run_collection`, `api_save` | Use your API client collections: list them, send a request, run a whole collection with its tests, save a new request. |
 | `watch_console` | Follows your browser live (needs **Stream** on): console, network requests with bodies, navigation and clicks, with a cursor to continue. |
 | `export_handoff` | Packs the whole session into one file to hand over. |

@@ -1026,3 +1026,31 @@ body[data-mode="dev"] #effects-panel { display: none; }
 .embedded #agent-tutorial-btn {
   display: none;
 }
+
+/* ------------------------------ Flow panel ------------------------------- */
+
+#flow-panel {
+  position: absolute; top: 10px; right: 10px; width: 320px; max-height: calc(100% - 20px);
+  display: flex; flex-direction: column; overflow: hidden; z-index: 21;
+  background: #1e1e1e; color: var(--text); border: 1px solid #333; border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.35); font-size: 12px;
+}
+#flow-panel .fx-head span { flex: 1; }
+.flow-body { display: flex; flex-direction: column; gap: 10px; padding: 12px; overflow-y: auto; }
+.flow-hint { margin: 0; color: var(--text-dim); }
+.flow-kinds { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.flow-kind, .flow-arrow { padding: 7px 4px; border: 1px solid #3a3a3a; border-radius: 8px; background: #262626; color: var(--text); font-size: 12px; cursor: pointer; }
+.flow-kind:hover, .flow-arrow:hover { background: #303030; }
+.flow-kind.flow-start { border-color: #2f8f56; } .flow-kind.flow-step { border-color: #3a5bd9; }
+.flow-kind.flow-decision { border-color: #c78a00; } .flow-kind.flow-end { border-color: #c8372d; }
+.flow-label { display: flex; flex-direction: column; gap: 4px; color: var(--text-dim); }
+.flow-label textarea { width: 100%; resize: vertical; padding: 8px; border: 1px solid #3a3a3a; border-radius: 8px; background: #161616; color: var(--text); font: inherit; }
+.flow-summary { color: var(--text-dim); }
+.flow-issues { margin: 0; padding: 0 0 0 16px; color: #ffb340; }
+.flow-issues:empty { display: none; }
+.flow-code summary { cursor: pointer; color: var(--text-dim); }
+.flow-code pre { margin: 6px 0 0; padding: 8px; max-height: 160px; overflow: auto; background: #161616; border-radius: 8px; font: 11px/1.5 ui-monospace, monospace; white-space: pre-wrap; }
+.flow-send { padding: 9px 10px; border: 0; border-radius: 8px; background: var(--send, #ffb340); color: var(--send-ink, #2a1a00); font-weight: 700; cursor: pointer; }
+.flow-send:disabled { opacity: .5; cursor: default; }
+#flow-status.ok { color: #5fd08a; } #flow-status.err { color: #e5645a; }
+body[data-mode="dev"] #flow-panel { display: none; }
