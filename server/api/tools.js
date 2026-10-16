@@ -13,6 +13,7 @@ import { z } from "zod";
 import * as store from "./store.js";
 import * as svc from "./service.js";
 import { makeAgentGuard } from "./agent-guard.js";
+import { registerStressTools } from "./stress-tools.js";
 
 const MAX_BODY_CHARS = 4000;
 
@@ -34,6 +35,7 @@ const testSchema = z.array(z.object({
 }));
 
 export function registerApiTools(server) {
+  registerStressTools(server);
   server.tool(
     "api_list",
     "Lists the user's saved API requests (grouped in collections), their environments and which one is active. " +

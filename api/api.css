@@ -88,3 +88,15 @@ dialog h3 { margin: 0; font-size: 14px; }
 
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 @media (max-width: 760px) { #app { grid-template-columns: 1fr; } #sidebar { max-height: 30vh; } }
+
+/* security + load reports */
+dialog .wide { width: min(720px, 90vw); }
+dialog:has(.wide) { width: min(760px, 92vw); }
+.report-scroll { max-height: 60vh; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
+.sec-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; } .sec-head b { flex: 1; font: 600 12px ui-monospace, monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.probe { display: flex; gap: 10px; padding: 5px 6px; border-radius: 6px; } .probe:hover { background: var(--raised); }
+.probe-mark { width: 16px; font-weight: 700; text-align: center; }
+.probe.pass .probe-mark { color: #5fd08a; } .probe.fail .probe-mark { color: #e5645a; } .probe.warn .probe-mark { color: var(--send); } .probe.skip .probe-mark { color: var(--text-dim); }
+.probe.fail { background: rgba(229,100,90,.08); }
+.probe-title { font-weight: 600; }
+.verdict { margin: 0 0 8px; padding: 8px 10px; border-radius: 8px; font-weight: 600; } .verdict.ok { background: rgba(95,208,138,.12); color: #5fd08a; } .verdict.bad { background: rgba(229,100,90,.12); color: #ffb4ad; }

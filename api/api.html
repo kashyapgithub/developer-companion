@@ -47,6 +47,9 @@
           <select id="save-col" title="Collection to save into"></select>
           <button id="save">Save</button>
           <button id="copy-curl" title="Copy as curl">Copy curl</button>
+          <button id="security-btn" title="Probe this request for common security bugs (missing auth, IDOR, mass assignment, bad input…)">Security</button>
+          <button id="load-btn" title="Send many requests: speed and errors under load">Load</button>
+          <button id="race-btn" title="Send the same request twice at the same instant (double-click, retries)">Double-submit</button>
           <span id="dirty" class="muted"></span>
         </div>
 
@@ -86,6 +89,7 @@
   <dialog id="dlg-import"></dialog>
   <dialog id="dlg-captured"></dialog>
   <dialog id="dlg-run"></dialog>
+  <dialog id="dlg-report"></dialog>
   <dialog id="dlg-ask"></dialog>
   <div id="toast" class="toast" role="status"></div>
   <script type="module" src="api.js"></script>

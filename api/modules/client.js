@@ -36,5 +36,8 @@ export const api = {
   runCollection: (collection, opts = {}) => call("POST", "/run-collection", { collection, ...opts }),
   importText: (text, collectionId) => call("POST", "/import", { text, collectionId }),
   curl: (request, collectionId) => call("POST", "/curl", { request, collectionId }),
+  security: (request, collectionId, otherToken) => call("POST", "/security", { request, collectionId, otherToken }),
+  securityCollection: (collection, otherToken) => call("POST", "/security", { collection, otherToken }),
+  stress: (request, collectionId, opts) => call("POST", "/stress", { request, collectionId, ...opts }),
   clearHistory: () => call("POST", "/history/clear"),
 };

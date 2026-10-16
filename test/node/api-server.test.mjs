@@ -55,7 +55,7 @@ r = await call("POST", "/run", { request: { method: "GET", url: "http://127.0.0.
 
 // ---- agent tools ----
 const names = (await client.listTools()).tools.map((x) => x.name);
-t("agent has all four tools", ["api_list", "api_run", "api_run_collection", "api_save"].every((n) => names.includes(n)));
+t("agent has all six tools", ["api_list", "api_run", "api_run_collection", "api_save", "api_security", "api_stress"].every((n) => names.includes(n)));
 const list = await tool("api_list");
 t("api_list shows collections, refs and environments", list.collections.some((c) => c.name === "Shop" && c.requests.some((q) => q.ref === "Shop/Login")) && list.environments.some((e) => e.name === "Local"));
 let run = await tool("api_run", { ref: "Shop/Login" });
@@ -73,6 +73,18 @@ t("api_save creates the collection and request", /Agent checks\/Orders needs aut
 t("…and the user sees it in the popup's state", (await call("GET", "/state")).collections.some((c) => c.name === "Agent checks" && c.requests.length === 1));
 t("…and it runs: no token sent, 401 as the test expects", (await tool("api_run", { ref: "Agent checks/Orders needs auth" })).testsPassed === true);
 t("unknown ref gives advice", /api_list/.test(await tool("api_run", { ref: "Nope/Nope" })));
+
+// security + stress tools
+const sec = await tool("api_security", { ref: "Agent checks/Orders needs auth" });
+t("api_security returns findings in agent form", sec.summary && Array.isArray(sec.findings) && sec.request.includes("/orders"), JSON.stringify(sec).slice(0, 120));
+t("api_security refuses unknown refs with advice", /api_list/.test(await tool("api_security", { ref: "Nope/Nope" })));
+const colSec = await tool("api_security", { collection: "Shop" });
+t("api_security can check a whole collection", colSec.results?.length === 2);
+const load = await tool("api_stress", { ref: "Shop/Login", mode: "load", total: 12, concurrency: 4 });
+t("api_stress load reports percentiles", load.requests === 12 && load.latencyMs.p95 !== undefined);
+const race = await tool("api_stress", { ref: "Shop/Login", mode: "race", n: 3 });
+t("api_stress race reports simultaneous requests", race.simultaneous === 3);
+t("the popup route works too", (await call("POST", "/stress", { request: { method: "GET", url: `${base}/login` }, mode: "race", n: 2 })).report.simultaneous === 2);
 
 await client.close(); api.close();
 for (const [c, n] of out) console.log((c ? "PASS " : "FAIL ") + n);

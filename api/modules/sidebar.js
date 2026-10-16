@@ -40,6 +40,7 @@ export function createSidebar(els, cb) {
         el("span", { class: "col-name", title: c.name }, c.name),
         el("button", { title: "New request", onclick: () => cb.onNewRequest(c) }, "+"),
         el("button", { title: "Run every request in order", onclick: () => cb.onRunCollection(c) }, "▶"),
+        el("button", { title: "Security check for every request", onclick: () => cb.onSecurityCollection(c) }, "🛡"),
         el("button", { title: "Rename", onclick: () => cb.onRenameCollection(c) }, "✎"),
         el("button", { title: "Delete collection", onclick: () => cb.onDeleteCollection(c) }, "✕")),
       open ? el("div", { class: "col-body" }, body.length ? body : el("p", { class: "empty-hint" }, "Empty. Press + to add a request.")) : null);

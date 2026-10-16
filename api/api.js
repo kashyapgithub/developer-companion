@@ -17,6 +17,7 @@ import { createEnvPanel } from "./modules/env-panel.js";
 import { createImportDialog } from "./modules/import-dialog.js";
 import { createCapturedDialog } from "./modules/captured.js";
 import { showRunReport } from "./modules/run-report.js";
+import { showSecurityReport, showStressReport } from "./modules/test-reports.js";
 import { el, fill } from "./modules/dom.js";
 
 const $ = (id) => document.getElementById(id);
@@ -49,6 +50,7 @@ const sidebar = createSidebar({ tree: $("tree"), history: $("history") }, {
   onRenameCollection: guarded(async (c) => { const name = await askText($("dlg-ask"), "Rename collection", c.name); if (name) { await api.renameCollection(c.id, name); await refresh(); } }),
   onDeleteCollection: guarded(async (c) => { if (await askConfirm($("dlg-ask"), `Delete "${c.name}" and its ${c.requests.length} request(s)?`)) { await api.deleteCollection(c.id); if (collectionId === c.id) collectionId = ""; await refresh(); } }),
   onDeleteRequest: guarded(async (c, r) => { if (await askConfirm($("dlg-ask"), `Delete "${r.name}"?`)) { await api.deleteRequest(c.id, r.id); await refresh(); } }),
+  onSecurityCollection: guarded(async (c) => { say(`Probing ${c.name}…`); const { report } = await api.securityCollection(c.id); showSecurityReport($("dlg-report"), { reports: report.results, title: `Security check: ${report.collection}` }); }),
   onRunCollection: guarded(async (c) => { say(`Running ${c.name}…`); const { run } = await api.runCollection(c.id); await refresh(); showRunReport($("dlg-run"), run); }),
 });
 
@@ -114,10 +116,37 @@ const copyCurl = guarded(async () => {
   say(missing.length ? `Copied. Unset variables: ${missing.map((m) => `{{${m}}}`).join(", ")}` : "curl copied");
 });
 
+/** Runs a slow test with the button showing progress. */
+async function busy(button, label, work) {
+  const old = button.textContent; button.disabled = true; button.textContent = label;
+  try { await work(); } finally { button.disabled = false; button.textContent = old; }
+}
+
+const security = guarded(async () => {
+  const draft = editor.get();
+  if (!draft.url) return fail("Enter a URL first.");
+  await busy($("security-btn"), "Probing…", async () => {
+    const { report } = await api.security(draft, collectionId);
+    showSecurityReport($("dlg-report"), { reports: [report] });
+  });
+});
+const stress = (mode) => guarded(async () => {
+  const draft = editor.get();
+  if (!draft.url) return fail("Enter a URL first.");
+  const button = $(mode === "race" ? "race-btn" : "load-btn");
+  await busy(button, mode === "race" ? "Racing…" : "Loading…", async () => {
+    const { report } = await api.stress(draft, collectionId, mode === "race" ? { mode, n: 5 } : { mode, total: 100, concurrency: 10 });
+    showStressReport($("dlg-report"), report);
+  });
+});
+
 // ---- buttons & shortcuts ---------------------------------------------------------------------------
 $("send").addEventListener("click", send);
 $("save").addEventListener("click", save);
 $("copy-curl").addEventListener("click", copyCurl);
+$("security-btn").addEventListener("click", security);
+$("load-btn").addEventListener("click", stress("load"));
+$("race-btn").addEventListener("click", stress("race"));
 $("new-col").addEventListener("click", guarded(async () => {
   const name = await askText($("dlg-ask"), "New collection", ""); if (!name) return;
   const { collection } = await api.createCollection(name); collectionId = collection.id; await refresh();

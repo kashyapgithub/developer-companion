@@ -14,6 +14,8 @@
  *   POST   /apiclient/run-collection                 { collection, folder?, stopOnFailure? }
  *   POST   /apiclient/import                         { text }  Postman collection/environment JSON or a curl command
  *   POST   /apiclient/curl                           { request, collectionId? }  -> { curl }
+ *   POST   /apiclient/security                      { request, collectionId?, otherToken? }  or  { collection }  -> probe results
+ *   POST   /apiclient/stress                         { request, mode: "load"|"race", total?, concurrency?, n?, collectionId? }
  *   POST   /apiclient/history/clear
  *
  * Called from server.js after the origin / access-code checks. Returns true when handled.
@@ -75,6 +77,8 @@ export function handleApiClient(req, res, pathname, { readJsonBody, respondJson 
   if (m === "POST" && kind === "run-collection") { body(async (p) => ({ run: await svc.runCollection(p.collection, { folder: p.folder, stopOnFailure: !!p.stopOnFailure }) })); return true; }
   if (m === "POST" && kind === "import") { body((p) => importText(p.text, p.collectionId)); return true; }
   if (m === "POST" && kind === "curl") { body((p) => svc.curlFor(store.cleanRequest(p.request || {}), p.collectionId)); return true; }
+  if (m === "POST" && kind === "security") { body(async (p) => (p.collection ? { report: await svc.securityCheckCollection(p.collection, { otherToken: p.otherToken }) } : { report: await svc.securityCheck(store.cleanRequest(p.request || {}), { collectionId: p.collectionId, otherToken: p.otherToken }) })); return true; }
+  if (m === "POST" && kind === "stress") { body(async (p) => ({ report: await svc.stressTest(store.cleanRequest(p.request || {}), p)  })); return true; }
   if (m === "POST" && kind === "history" && id === "clear") { now(() => { store.clearHistory(); return {}; }); return true; }
   return false;
 }

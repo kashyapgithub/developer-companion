@@ -9,6 +9,8 @@ import * as store from "./store.js";
 import { runRequest } from "./runner.js";
 import { buildRequest } from "./build-request.js";
 import { toCurl } from "./curl.js";
+import { runSecurity } from "./security.js";
+import { runLoad, runRace } from "./load.js";
 
 /** Small record for the history list. */
 const summarize = (r) => ({ name: r.name, method: r.method, url: r.url, status: r.status, ok: r.ok, durationMs: r.durationMs, testsPassed: r.testsPassed, error: r.error });
@@ -54,4 +56,26 @@ export async function runCollection(collectionRef, { folder, stopOnFailure = fal
 export function curlFor(request, collectionId) {
   const built = buildRequest(request, store.variablesFor(collectionId));
   return { curl: toCurl(built), missing: built.missing };
+}
+
+// ---- throw-away tests (nothing is saved, no history) ------------------------------------------
+
+/** Security probes for one request. `otherToken` (a second user's token) enables the IDOR check. */
+export function securityCheck(request, { collectionId, otherToken, guard, fetchImpl } = {}) {
+  return runSecurity(request, { variables: store.variablesFor(collectionId), otherToken, urlGuard: guard, fetchImpl });
+}
+
+/** Security probes for every request in a collection (first 25), one result each. */
+export async function securityCheckCollection(collectionRef, { otherToken, guard, fetchImpl } = {}) {
+  const col = store.getState().collections.find((c) => c.id === collectionRef || c.name === collectionRef);
+  if (!col) throw new Error(`No collection "${collectionRef}".`);
+  const results = [];
+  for (const request of col.requests.slice(0, 25)) results.push(await securityCheck(request, { collectionId: col.id, otherToken, guard, fetchImpl }));
+  return { collection: col.name, results };
+}
+
+/** Load test ("load") or simultaneous-requests test ("race") for one request. */
+export function stressTest(request, { mode = "load", collectionId, total, concurrency, n, guard, fetchImpl } = {}) {
+  const variables = store.variablesFor(collectionId);
+  return mode === "race" ? runRace(request, { variables, n, urlGuard: guard, fetchImpl }) : runLoad(request, { variables, total, concurrency, urlGuard: guard, fetchImpl });
 }

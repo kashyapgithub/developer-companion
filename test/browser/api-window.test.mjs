@@ -74,6 +74,19 @@ const app = await browser.newPage(); await app.goto("http://127.0.0.1:8777/page"
 const cap = await win.evaluate(() => chrome.runtime.sendMessage({ type: "API_CAPTURED" }));
 t("captured traffic answers with a list", cap?.ok === true && Array.isArray(cap.items));
 
+// 8b. Security check, load test and double-submit from the toolbar.
+await win.evaluate(() => window.__dcApi.editor.set({ method: "GET", url: "127.0.0.1:5975/probe?x=1", name: "probe", auth: { type: "bearer", token: "abc" } }));
+await win.click("#security-btn"); await wait(2500);
+const secText = await win.$eval("#dlg-report", (e) => e.textContent);
+t("Security check shows its findings", /Works without credentials/.test(secText) && /fail/.test(secText), secText.slice(0, 80));
+await win.evaluate(() => document.getElementById("dlg-report").close());
+await win.click("#load-btn"); await wait(2500);
+t("Load test shows latency", /p50/.test(await win.$eval("#dlg-report", (e) => e.textContent)));
+await win.evaluate(() => document.getElementById("dlg-report").close());
+await win.click("#race-btn"); await wait(1500);
+t("Double-submit test shows the verdict", /Sent at the same instant/.test(await win.$eval("#dlg-report", (e) => e.textContent)));
+await win.evaluate(() => document.getElementById("dlg-report").close());
+
 // 9. Errors are friendly, and the page threw nothing.
 await win.evaluate(() => window.__dcApi.editor.set({ method: "GET", url: "{{nope}}/x" }));
 await win.click("#send"); await wait(700);
