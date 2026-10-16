@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>3D motion</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="../editor/ui/tokens.css" />
+  <link rel="stylesheet" href="motion.css" />
+</head>
+<body>
+  <div id="app">
+    <section id="stage-col">
+      <header id="bar">
+        <h1>3D motion</h1>
+        <div class="seg" role="radiogroup" aria-label="Tool">
+          <button data-tool="draw" title="Draw freehand on the plane. Shift+drag continues the selected curve">Draw</button>
+          <button data-tool="points" title="Click to place points. Double-click or Enter to finish">Points</button>
+          <button data-tool="edit" title="Drag the white points of the selected curve">Edit</button>
+          <button data-tool="orbit" title="Drag to turn the view (right-drag works in every tool)">Orbit</button>
+        </div>
+        <label class="inline" title="Which flat surface your stroke lands on">Plane
+          <select id="plane"><option value="front">Front (X, Y)</option><option value="floor">Floor (X, Z)</option><option value="side">Side (Y, Z)</option></select>
+        </label>
+        <label class="inline" title="Distance of the plane from the middle, in px">Offset <input id="offset" type="range" min="-400" max="400" step="10" value="0" /><output id="offset-out">0</output></label>
+        <span class="spacer"></span>
+        <button id="undo" title="Undo (Ctrl+Z)">Undo</button>
+        <button id="reset-view" title="Back to the default angle">Reset view</button>
+        <button id="clear" title="Delete every curve">Clear</button>
+      </header>
+      <canvas id="view" aria-label="3D drawing space"></canvas>
+      <p id="hint" class="hint"></p>
+    </section>
+
+    <aside id="side">
+      <div id="curves"></div>
+      <div class="scene-box">
+        <h2>Scene</h2>
+        <div class="two">
+          <label class="cf"><span>Perspective (px)</span><input id="perspective" type="number" min="100" max="5000" step="50" value="800" /></label>
+          <label class="cf check"><input id="guides" type="checkbox" checked /><span>Floor shadows (depth guide)</span></label>
+          <label class="cf"><span>Element width</span><input id="stage-w" type="number" min="20" max="1200" value="320" /></label>
+          <label class="cf"><span>Element height</span><input id="stage-h" type="number" min="20" max="1200" value="200" /></label>
+        </div>
+        <label class="cf"><span>Explain the motion in your words</span>
+          <textarea id="notes" rows="3" placeholder="e.g. The card flies in from the left, tilts toward the user, then settles. The logo orbits it slowly."></textarea></label>
+        <button id="send" class="send" disabled>Send motion to agent</button>
+        <div id="status" role="status"></div>
+        <details class="css-peek"><summary>CSS the agent will get</summary><pre id="css-preview"></pre></details>
+      </div>
+    </aside>
+  </div>
+  <script type="module" src="motion.js"></script>
+</body>
+</html>

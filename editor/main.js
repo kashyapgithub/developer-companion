@@ -141,6 +141,7 @@ wireHandoff({
 flowPanel = wireFlowPanel({ buttonEl: document.getElementById("flow-btn"), panelEl: document.getElementById("flow-panel"), controller, engine });
 wireHoverToggle({ buttonEl: document.getElementById("hover-mode-btn") });
 document.getElementById("video-btn")?.addEventListener("click", () => chrome.runtime.sendMessage({ type: "VIDEO_OPEN" }));
+document.getElementById("motion-btn")?.addEventListener("click", () => chrome.runtime.sendMessage({ type: "MOTION_OPEN" }));
 document.getElementById("api-btn")?.addEventListener("click", () => chrome.runtime.sendMessage({ type: "API_OPEN" }));
 wireXray({ buttonEl: document.getElementById("xray-btn"), imageImport, say: (t) => { shotStatus.textContent = t; clearTimeout(shotStatus._t); shotStatus._t = setTimeout(() => { shotStatus.textContent = ""; }, 5000); } });
 wireSketchOverlay({ buttonEl: document.getElementById("overlay-btn"), controller, engine });

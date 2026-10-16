@@ -14,6 +14,7 @@ import path from "node:path";
 import * as store from "./storage.js";
 import * as insp from "./inspiration.js";
 import { readFlow, writeFlow } from "./flow.js";
+import { readMotion, writeMotion } from "./motion.js";
 
 export const BUNDLE_FORMAT = "developer-companion-handoff";
 export const BUNDLE_VERSION = 1;
@@ -60,6 +61,12 @@ function exportFlow() {
   return f ? { flow: f.flow, pngBase64: f.png } : null;
 }
 
+/** The 3D motion sent from the motion window, with its picture, or null. */
+function exportMotion() {
+  const m = readMotion();
+  return m ? { doc: m.doc, pngBase64: m.png } : null;
+}
+
 /** Read-only digest of the newest log recording (never fails the export). */
 function exportRecordingSummary() {
   try { const id = store.latestRecordingId(); return id ? { id, summary: store.summarizeRecording(id) } : null; }
@@ -73,6 +80,7 @@ export function buildBundle({ inspiration = true } = {}) {
     sketch: exportSketch(), xray: exportXray(), video: exportVideo(),
     inspiration: inspiration ? exportInspiration() : null,
     flow: exportFlow(),
+    motion: exportMotion(),
     recording_summary: exportRecordingSummary(),
   };
 }
@@ -85,6 +93,7 @@ export function describeBundle(b) {
     video_moments: b.video?.doc?.moments?.length || 0,
     inspiration_images: b.inspiration?.items?.length || 0,
     flow: !!b.flow,
+    motion: !!b.motion,
     recording_summary: !!b.recording_summary,
   };
 }
@@ -150,6 +159,7 @@ export function importBundle(b) {
   part("xray_elements", b.xray?.doc, () => importXray(b.xray));
   part("video_moments", b.video?.doc, () => importVideo(b.video));
   part("flow", b.flow?.flow, () => { writeFlow({ ...b.flow.flow, pngBase64: b.flow.pngBase64 }); return true; });
+  part("motion", b.motion?.doc, () => { writeMotion({ doc: b.motion.doc, pngBase64: b.motion.pngBase64 }); return true; });
   part("inspiration_images", b.inspiration, () => importInspiration(b.inspiration));
   return result;
 }

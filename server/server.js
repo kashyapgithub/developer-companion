@@ -50,6 +50,7 @@ import { registerWatchConsole } from "./watch-console.js";
 import { handleApiClient } from "./api/routes.js";
 import { registerApiTools } from "./api/tools.js";
 import { handleFlow, registerFlowTool } from "./flow.js";
+import { handleMotion, registerMotionTool } from "./motion.js";
 
 const PORT = Number(process.env.PORT) || Number(process.env.LOG_SERVER_PORT) || 5959;
 const MAX_BODY_BYTES = 60 * 1024 * 1024; // 60MB for large PNG wireframes
@@ -180,6 +181,9 @@ function startHttpReceiver() {
 
     // Explain flow to agent: the flowchart the user drew
     if (handleFlow(req, res, pathname, { readJsonBody, respondJson })) return;
+
+    // 3D motion: the 3D curves the user drew for CSS animation
+    if (handleMotion(req, res, pathname, { readJsonBody, respondJson })) return;
 
     // API client (collections, environments, send requests): the popup window talks to these
     if (handleApiClient(req, res, pathname, { readJsonBody, respondJson })) return;
@@ -651,6 +655,7 @@ function startMcpServer() {
   registerWatchConsole(server);
   registerApiTools(server);
   registerFlowTool(server);
+  registerMotionTool(server);
 
   server.tool(
     "start_recording",

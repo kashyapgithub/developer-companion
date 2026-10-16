@@ -22,6 +22,7 @@ import { showSketchOverlay, hideSketchOverlay } from "./lib/sketch-overlay.js";
 import { toggleXray, handleXraySend } from "./lib/xray.js";
 import { openVideoWindow, sendImageToEditor } from "./lib/video-window.js";
 import { openApiWindow, capturedForApiClient } from "./lib/api-window.js";
+import { openMotionWindow } from "./lib/motion-window.js";
 import { startPicking, handlePicked, handleCancelled } from "./lib/element-picker.js";
 import { captureTab, trackWebTabs, resolveTargetTab } from "./lib/tab-capture.js";
 import { extractTokensInPage, tokensFromRaw } from "./lib/agent-tools/design-tokens.js";
@@ -348,6 +349,11 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   // API client window (see api/api.js) and the browser calls it can import.
   if (message.type === "API_OPEN") {
     openApiWindow().then(sendResponse);
+    return true;
+  }
+  // 3D motion window (see motion/motion.js): draw 3D curves for CSS animation.
+  if (message.type === "MOTION_OPEN") {
+    openMotionWindow().then(sendResponse);
     return true;
   }
   if (message.type === "API_CAPTURED") {
