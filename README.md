@@ -193,6 +193,8 @@ These are for the agent, not buttons. Once connected, just ask in plain words. T
 ### Explain flow to agent: draw a flowchart and send it
 Press **Explain flow** in the top bar. The panel gives you **Start**, **Step**, **Decision** and **End** blocks. Select a block and press a kind: the new block appears next to it, already joined by an arrow (out of a decision the exits come pre-labelled **Yes** and **No**). Double-click a block or arrow to name it, or use the **Arrow tool** to join blocks yourself. Type the story in your own words, then press **Explain flow to agent**.
 
+**Tidy up** re-arranges your blocks into clean rows. **Draw from Mermaid** turns a pasted flow (your agent can write one) into blocks on the canvas in one undo step, and **Copy Mermaid** goes the other way. Your explanation is remembered between sessions, and the flow travels in handoff files.
+
 Your agent calls `get_latest_flow` and gets your explanation, the flow as Mermaid text and as structured blocks and arrows, a picture, and a list of anything that looks unfinished (a decision with one exit, an unlabeled arrow, a dead end that isn't marked End), so it can ask you instead of guessing.
 
 ### API client: a Postman replacement, built in

@@ -65,6 +65,39 @@ t("missing exit labels show up as an issue", /without a label/.test(await ed.$ev
 await ed.click("#flow-send"); await wait(1000);
 const again = (await agent.callTool({ name: "get_latest_flow", arguments: {} })).content[0].text;
 t("and the agent is told about it", /exits without a label/.test(again));
+
+// ---- Draw from Mermaid, Tidy up, copy, persistence, handoff ----
+await ed.evaluate(() => { const c = window.__uiSketch.controller; c.loadShapes([]); });
+await ed.click("#flow-btn"); await ed.click("#flow-btn"); await wait(300);
+await ed.evaluate(() => { document.querySelector("#flow-panel details:nth-of-type(1)").open = true; });
+await ed.type("#flow-paste", "flowchart TD\n A([Start]) --> B{Paid?}\n B -->|Yes| C[Ship]\n B -->|No| D[Remind]\n D --> B\n C --> E([Done])");
+await ed.click("#flow-draw"); await wait(500);
+const drawn = await ed.evaluate(() => window.__uiSketch.controller.state.shapes.map((s) => ({ t: s.type, k: s.flowKind, text: s.text, label: s.label, x: s.x, y: s.y, w: s.w, h: s.h })));
+t("Mermaid draws five blocks and five arrows", drawn.filter((s) => s.k).length === 5 && drawn.filter((s) => s.t === "connector").length === 5);
+t("blocks carry their labels", drawn.some((s) => s.text === "Paid?" && s.k === "decision"));
+t("arrow labels come across", drawn.filter((s) => s.t === "connector" && s.label).map((s) => s.label).sort().join() === "No,Yes");
+t("one undo removes the whole drawn flow", await ed.evaluate(async () => { const c = window.__uiSketch.controller; c.undoAction(); return c.state.shapes.length === 0; }));
+await ed.evaluate(() => window.__uiSketch.controller.redoAction()); await wait(200);
+t("a bad paste explains itself", await (async () => {
+  await ed.$eval("#flow-paste", (e) => { e.value = "???"; });
+  await ed.click("#flow-draw"); await wait(200);
+  return /Nothing to draw/.test(await ed.$eval("#flow-status", (e) => e.textContent));
+})());
+await ed.evaluate(() => { const c = window.__uiSketch.controller; c.state.shapes.filter((s) => s.flowKind).forEach((s, i) => { s.x = i * 20; s.y = i * 10; }); });
+await ed.click("#flow-tidy"); await wait(400);
+const tidy = await ed.evaluate(() => window.__uiSketch.controller.state.shapes.filter((s) => s.flowKind).map((s) => ({ x: s.x, y: s.y, w: s.w, h: s.h })));
+t("Tidy up separates the blocks", tidy.every((a, i) => tidy.every((b, j) => i === j || a.x + a.w <= b.x || b.x + b.w <= a.x || a.y + a.h <= b.y || b.y + b.h <= a.y)));
+await ed.screenshot({ path: (process.env.FLOW_SHOT || "/dev/null").replace(".png", "-2.png") });
+
+await ed.$eval("#flow-notes", (e) => { e.value = ""; });
+await ed.type("#flow-notes", "Remind after 24h.");
+await wait(300);
+await ed.reload(); await wait(900);
+await ed.click("#flow-btn"); await wait(300);
+t("your explanation is still there after a reload", (await ed.$eval("#flow-notes", (e) => e.value)) === "Remind after 24h.");
+
+const bundle = await (await fetch("http://127.0.0.1:5976/handoff")).json();
+t("the handoff file carries the flow", !!bundle.flow?.flow?.mermaid && bundle.flow.flow.graph.nodes.length > 0);
 t("no script errors", errors.length === 0, errors.join(" | "));
 
 await browser.close(); await agent.close().catch(() => {});

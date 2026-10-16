@@ -227,12 +227,21 @@
         <div class="flow-body">
           <p class="flow-hint">Select a block, then press a kind: the new block appears next to it, already joined. Double-click a block or arrow to name it.</p>
           <div id="flow-kinds" class="flow-kinds"></div>
-          <button id="flow-arrow" type="button" class="flow-arrow" title="Draw an arrow from one block to another">Arrow tool: drag block → block</button>
+          <div class="flow-row">
+            <button id="flow-arrow" type="button" class="flow-arrow" title="Draw an arrow from one block to another">Arrow tool</button>
+            <button id="flow-tidy" type="button" class="flow-arrow" title="Re-arrange the blocks into clean rows">Tidy up</button>
+            <button id="flow-copy" type="button" class="flow-arrow" title="Copy the flow as Mermaid text">Copy Mermaid</button>
+          </div>
           <label class="flow-label">Explain it in your words
             <textarea id="flow-notes" rows="4" placeholder="e.g. A user signs up, we send an email code. If the code is wrong 3 times we lock the account for 10 minutes."></textarea>
           </label>
           <div id="flow-summary" class="flow-summary"></div>
           <ul id="flow-issues" class="flow-issues"></ul>
+          <details class="flow-code">
+            <summary>Draw from Mermaid (paste a flow, e.g. one your agent wrote)</summary>
+            <textarea id="flow-paste" rows="5" spellcheck="false" placeholder="flowchart TD&#10;  A([Start]) --> B{Valid?}&#10;  B -->|Yes| C[Save]&#10;  B -->|No| D[Show error]"></textarea>
+            <button id="flow-draw" type="button" class="flow-arrow">Draw it</button>
+          </details>
           <details class="flow-code"><summary>What the agent reads (Mermaid)</summary><pre id="flow-mermaid"></pre></details>
           <button id="flow-send" type="button" class="flow-send" disabled>Explain flow to agent</button>
           <div id="flow-status" role="status"></div>

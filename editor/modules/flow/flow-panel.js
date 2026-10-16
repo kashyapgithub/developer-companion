@@ -16,6 +16,9 @@ import { buildFlowGraph } from "./flow-graph.js";
 import { toMermaid } from "./flow-mermaid.js";
 import { sendFlow } from "./flow-api.js";
 import { visibleShapes } from "../shapes.js";
+import { wireFlowTools } from "./flow-tools-ui.js";
+
+const NOTES_KEY = "dcFlowNotes";
 
 const $ = (root, sel) => root.querySelector(sel);
 
@@ -92,6 +95,11 @@ export function wireFlowPanel({ buttonEl, panelEl, controller, engine, send = se
   }
   const setStatus = (text, cls = "") => { els.status.textContent = text; els.status.className = cls; };
   els.send.addEventListener("click", sendNow);
+  wireFlowTools({ panelEl, controller, engine, say: (text, cls) => setStatus(text, cls) });
+
+  // Your explanation survives closing the editor.
+  chrome.storage?.local.get(NOTES_KEY).then((r) => { if (r?.[NOTES_KEY] && !els.notes.value) els.notes.value = r[NOTES_KEY]; }).catch(() => {});
+  els.notes.addEventListener("input", () => chrome.storage?.local.set({ [NOTES_KEY]: els.notes.value }).catch(() => {}));
 
   // ---- open / close -------------------------------------------------------------------------
   const isOpen = () => !panelEl.classList.contains("hidden");

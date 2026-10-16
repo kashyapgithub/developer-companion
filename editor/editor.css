@@ -1054,3 +1054,5 @@ body[data-mode="dev"] #effects-panel { display: none; }
 .flow-send:disabled { opacity: .5; cursor: default; }
 #flow-status.ok { color: #5fd08a; } #flow-status.err { color: #e5645a; }
 body[data-mode="dev"] #flow-panel { display: none; }
+.flow-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.flow-code textarea { width: 100%; margin: 6px 0; padding: 8px; border: 1px solid #3a3a3a; border-radius: 8px; background: #161616; color: var(--text); font: 11px/1.5 ui-monospace, monospace; resize: vertical; }

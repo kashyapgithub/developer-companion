@@ -13,6 +13,7 @@ import fs from "node:fs";
 import path from "node:path";
 import * as store from "./storage.js";
 import * as insp from "./inspiration.js";
+import { readFlow, writeFlow } from "./flow.js";
 
 export const BUNDLE_FORMAT = "developer-companion-handoff";
 export const BUNDLE_VERSION = 1;
@@ -53,6 +54,12 @@ function exportInspiration() {
   return { folders: lib.folders.map(({ count, ...f }) => f), items: lib.items, images };
 }
 
+/** The flowchart sent with "Explain flow", with its picture, or null. */
+function exportFlow() {
+  const f = readFlow();
+  return f ? { flow: f.flow, pngBase64: f.png } : null;
+}
+
 /** Read-only digest of the newest log recording (never fails the export). */
 function exportRecordingSummary() {
   try { const id = store.latestRecordingId(); return id ? { id, summary: store.summarizeRecording(id) } : null; }
@@ -65,6 +72,7 @@ export function buildBundle({ inspiration = true } = {}) {
     format: BUNDLE_FORMAT, version: BUNDLE_VERSION, createdAt: new Date().toISOString(),
     sketch: exportSketch(), xray: exportXray(), video: exportVideo(),
     inspiration: inspiration ? exportInspiration() : null,
+    flow: exportFlow(),
     recording_summary: exportRecordingSummary(),
   };
 }
@@ -76,6 +84,7 @@ export function describeBundle(b) {
     xray_elements: b.xray?.doc?.elements?.length || 0,
     video_moments: b.video?.doc?.moments?.length || 0,
     inspiration_images: b.inspiration?.items?.length || 0,
+    flow: !!b.flow,
     recording_summary: !!b.recording_summary,
   };
 }
@@ -140,6 +149,7 @@ export function importBundle(b) {
   part("sketch", b.sketch?.json, () => { store.writeSketch(b.sketch); return true; });
   part("xray_elements", b.xray?.doc, () => importXray(b.xray));
   part("video_moments", b.video?.doc, () => importVideo(b.video));
+  part("flow", b.flow?.flow, () => { writeFlow({ ...b.flow.flow, pngBase64: b.flow.pngBase64 }); return true; });
   part("inspiration_images", b.inspiration, () => importInspiration(b.inspiration));
   return result;
 }
