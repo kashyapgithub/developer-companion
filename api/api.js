@@ -50,7 +50,7 @@ const sidebar = createSidebar({ tree: $("tree"), history: $("history") }, {
   onRenameCollection: guarded(async (c) => { const name = await askText($("dlg-ask"), "Rename collection", c.name); if (name) { await api.renameCollection(c.id, name); await refresh(); } }),
   onDeleteCollection: guarded(async (c) => { if (await askConfirm($("dlg-ask"), `Delete "${c.name}" and its ${c.requests.length} request(s)?`)) { await api.deleteCollection(c.id); if (collectionId === c.id) collectionId = ""; await refresh(); } }),
   onDeleteRequest: guarded(async (c, r) => { if (await askConfirm($("dlg-ask"), `Delete "${r.name}"?`)) { await api.deleteRequest(c.id, r.id); await refresh(); } }),
-  onSecurityCollection: guarded(async (c) => { say(`Probing ${c.name}…`); const { report } = await api.securityCollection(c.id); showSecurityReport($("dlg-report"), { reports: report.results, title: `Security check: ${report.collection}` }); }),
+  onSecurityCollection: guarded(async (c) => { const risky = c.requests.find((r) => !READ_ONLY.includes(String(r.method).toUpperCase())); if (risky && !(await confirmChanges(risky.method, `Checking "${c.name}" (it has ${risky.method} requests)`))) return; say(`Probing ${c.name}…`); const { report } = await api.securityCollection(c.id); showSecurityReport($("dlg-report"), { reports: report.results, title: `Security check: ${report.collection}` }); }),
   onRunCollection: guarded(async (c) => { say(`Running ${c.name}…`); const { run } = await api.runCollection(c.id); await refresh(); showRunReport($("dlg-run"), run); }),
 });
 
@@ -122,9 +122,15 @@ async function busy(button, label, work) {
   try { await work(); } finally { button.disabled = false; button.textContent = old; }
 }
 
+const READ_ONLY = ["GET", "HEAD", "OPTIONS"];
+/** These tests send real requests; before sending a POST/PUT/PATCH/DELETE one, make sure the user means it. */
+const confirmChanges = (method, what) => READ_ONLY.includes(String(method).toUpperCase()) ? Promise.resolve(true)
+  : askConfirm($("dlg-ask"), `${what} will send real ${method} requests, which can create, change or delete data on this server. Use a dev or test server. Continue?`, "Run it");
+
 const security = guarded(async () => {
   const draft = editor.get();
   if (!draft.url) return fail("Enter a URL first.");
+  if (!(await confirmChanges(draft.method, "The security check"))) return;
   await busy($("security-btn"), "Probing…", async () => {
     const { report } = await api.security(draft, collectionId);
     showSecurityReport($("dlg-report"), { reports: [report] });
@@ -133,6 +139,7 @@ const security = guarded(async () => {
 const stress = (mode) => guarded(async () => {
   const draft = editor.get();
   if (!draft.url) return fail("Enter a URL first.");
+  if (!(await confirmChanges(draft.method, mode === "race" ? "The double-submit test" : "The load test (100 requests)"))) return;
   const button = $(mode === "race" ? "race-btn" : "load-btn");
   await busy(button, mode === "race" ? "Racing…" : "Loading…", async () => {
     const { report } = await api.stress(draft, collectionId, mode === "race" ? { mode, n: 5 } : { mode, total: 100, concurrency: 10 });

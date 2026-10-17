@@ -75,14 +75,19 @@ t("…and it runs: no token sent, 401 as the test expects", (await tool("api_run
 t("unknown ref gives advice", /api_list/.test(await tool("api_run", { ref: "Nope/Nope" })));
 
 // security + stress tools
-const sec = await tool("api_security", { ref: "Agent checks/Orders needs auth" });
+t("api_security refuses a POST until the user agreed", /Ask the user/.test(await tool("api_security", { ref: "Agent checks/Orders needs auth" })));
+t("api_stress refuses a POST until the user agreed", /Ask the user/.test(await tool("api_stress", { ref: "Shop/Login", mode: "race", n: 2 })));
+const skippedCol = await tool("api_security", { collection: "Shop" });
+t("a collection check skips non-GET requests and says so", skippedCol.results.length === 0 && skippedCol.skipped_not_read_only.length === 2 && /Ask the user/.test(skippedCol.note), JSON.stringify(skippedCol).slice(0, 120));
+const sec = await tool("api_security", { ref: "Agent checks/Orders needs auth", allow_changes: true });
 t("api_security returns findings in agent form", sec.summary && Array.isArray(sec.findings) && sec.request.includes("/orders"), JSON.stringify(sec).slice(0, 120));
 t("api_security refuses unknown refs with advice", /api_list/.test(await tool("api_security", { ref: "Nope/Nope" })));
-const colSec = await tool("api_security", { collection: "Shop" });
+const getSec = await tool("api_security", { ref: "Shop/Login", allow_changes: true }); t("(sanity) allowed run works", !!getSec.summary);
+const colSec = await tool("api_security", { collection: "Shop", allow_changes: true });
 t("api_security can check a whole collection", colSec.results?.length === 2);
-const load = await tool("api_stress", { ref: "Shop/Login", mode: "load", total: 12, concurrency: 4 });
+const load = await tool("api_stress", { ref: "Shop/Login", mode: "load", total: 12, concurrency: 4, allow_changes: true });
 t("api_stress load reports percentiles", load.requests === 12 && load.latencyMs.p95 !== undefined);
-const race = await tool("api_stress", { ref: "Shop/Login", mode: "race", n: 3 });
+const race = await tool("api_stress", { ref: "Shop/Login", mode: "race", n: 3, allow_changes: true });
 t("api_stress race reports simultaneous requests", race.simultaneous === 3);
 t("the popup route works too", (await call("POST", "/stress", { request: { method: "GET", url: `${base}/login` }, mode: "race", n: 2 })).report.simultaneous === 2);
 

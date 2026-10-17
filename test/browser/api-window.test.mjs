@@ -98,6 +98,18 @@ await win.click("#race-btn"); await wait(1500);
 t("Double-submit test shows the verdict", /Sent at the same instant/.test(await win.$eval("#dlg-report", (e) => e.textContent)));
 await win.evaluate(() => document.getElementById("dlg-report").close());
 
+// 8c. Tests that send real requests ask first when the request is not read-only.
+await win.evaluate(() => window.__dcApi.editor.set({ method: "POST", url: "127.0.0.1:5975/probe", name: "post probe", body: { mode: "json", content: "{}" } }));
+await win.click("#security-btn"); await wait(500);
+t("a POST security check asks before sending", /real POST requests/.test(await win.$eval("#dlg-ask", (e) => e.textContent)) && await win.$eval("#dlg-ask", (e) => e.open));
+await win.evaluate(() => [...document.querySelectorAll("#dlg-ask button")].find((b) => b.textContent === "Cancel").click()); await wait(500);
+t("cancelling sends nothing", !(await win.$eval("#dlg-report", (e) => e.open)));
+await win.click("#race-btn"); await wait(400);
+t("the double-submit test asks too", /double-submit/.test(await win.$eval("#dlg-ask", (e) => e.textContent)));
+await win.evaluate(() => [...document.querySelectorAll("#dlg-ask button")].find((b) => b.textContent === "Run it").click()); await wait(1800);
+t("agreeing runs it", /Sent at the same instant/.test(await win.$eval("#dlg-report", (e) => e.textContent)));
+await win.evaluate(() => document.getElementById("dlg-report").close());
+
 // 9. Errors are friendly, and the page threw nothing.
 await win.evaluate(() => window.__dcApi.editor.set({ method: "GET", url: "{{nope}}/x" }));
 await win.click("#send"); await wait(700);

@@ -11,7 +11,7 @@
  */
 
 import { orbit, zoom, rayAt, project, basis } from "./camera.js";
-import { hitPlane, planeOrigin } from "./plane-hit.js";
+import { hitPlane, hitNormal, planeOrigin } from "./plane-hit.js";
 import { simplify, createCurve } from "./curve-model.js";
 import { selectedCurve } from "./scene-state.js";
 import { dist, clone } from "./vec3.js";
@@ -35,6 +35,13 @@ export function attachInteraction(canvas, scene, hooks) {
   function pointOnPlane(e, through = planeOrigin(scene.plane, scene.offset)) {
     const { w, h } = size(), p = local(e);
     return hitPlane(rayAt(scene.camera, p.x, p.y, w, h), scene.plane, through);
+  }
+
+  /** The 3D point under the pointer on the plane through `through` that faces the camera. */
+  function facingHit(e, through) {
+    const { w, h } = size(), p = local(e);
+    const forward = rayAt(scene.camera, w / 2, h / 2, w, h).dir;
+    return hitNormal(rayAt(scene.camera, p.x, p.y, w, h), forward, through);
   }
 
   /** Where a continued stroke must begin: the end of the selected curve. */
@@ -101,7 +108,11 @@ export function attachInteraction(canvas, scene, hooks) {
       return;
     }
     if (mode === "edit" && grabbed) {
-      const pt = pointOnPlane(e, grabbed.curve.points[grabbed.index]); if (!pt) return;
+      // Default: slide the point in the plane facing the camera (predictable from any angle).
+      // Hold Shift to move it along the chosen drawing plane instead (to change its depth).
+      const through = grabbed.curve.points[grabbed.index];
+      const pt = e.shiftKey ? pointOnPlane(e, through) : facingHit(e, through);
+      if (!pt) return;
       grabbed.curve.points[grabbed.index] = pt; hooks.changed(); return;
     }
     if (scene.tool === "points" && scene.draft) { scene.hover = pointOnPlane(e, scene.draft.points.at(-1)); hooks.redraw(); }

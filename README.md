@@ -216,7 +216,7 @@ Open a request in the API window and press **Security**, **Load** or **Double-su
 
 Security also checks that a **retry with the same `Idempotency-Key`** doesn't create a second record, and (if you set an environment variable `expiredToken`) that an **old, logged-out token is refused**.
 
-Only point these at servers you own. Your agent can use them too: `api_security` and `api_stress`.
+Only point these at servers you own. These tests send **real requests**, so for anything that isn't a GET the window asks first (use a dev database), and your agent has to pass `allow_changes: true` after you agreed; otherwise `api_security` and `api_stress` refuse and say why.
 
 ### Spot N+1 queries with the optional backend helper
 A browser can't see inside your server, so the folder `probe/` is a tiny zero-dependency helper for your Node backend:
@@ -224,14 +224,14 @@ A browser can't see inside your server, so the folder `probe/` is a tiny zero-de
 ```js
 import { queryCounter, instrument } from "./probe/index.js";
 app.use(queryCounter({ enabled: process.env.NODE_ENV !== "production" }));  // before your routes
-instrument(pool);                                                            // pg, mysql2, knex…: wraps .query
+instrument(pool);                                                            // pg, mysql2, knex… (.query) or better-sqlite3 / node:sqlite
 ```
 
 Responses then carry `x-dc-queries` and `x-dc-query-ms`. The API client shows a **N queries** chip, warns on the N+1 shape (about as many queries as items in the list), and you can add a test **DB queries < 10**. The agent's `api_run` gets the same numbers. Prisma: `prisma.$on("query", (e) => count(Number(e.duration)))`.
 
 ### 3D motion: draw how things should move
 Press the **3D motion** button in the editor's top bar. A window opens with a 3D space (floor grid, axes, and a box showing your element's size).
-- Pick the **plane** you draw on (front, floor or side) and its **offset**, then **Draw** a freehand curve, or use **Points** to click a path. Change the plane and **Shift+drag** to continue the same curve in another direction, which is how a curve becomes truly 3D. **Edit** drags points. Right-drag turns the view, the wheel zooms.
+- Pick the **plane** you draw on (front, floor or side) and its **offset**, then **Draw** a freehand curve, or use **Points** to click a path. Change the plane and **Shift+drag** to continue the same curve in another direction, which is how a curve becomes truly 3D. **Edit** drags a point in the plane facing you (hold **Shift** to move it along the chosen plane and change its depth). Right-drag turns the view, the wheel zooms.
 - Every curve has its own **colour**, **label**, what it moves (`.card`, `logo`…), duration, easing, loop and notes. Labels show on the curves.
 - Set the **perspective** and the element size, and write the motion in your own words.
 

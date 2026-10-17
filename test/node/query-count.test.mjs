@@ -47,6 +47,24 @@ t("readQueries ignores missing or junk headers", readQueries({}) === undefined &
 t("many queries without a list still warn", /a lot/.test(queryAdvice({ count: 40 }, { id: 1 })));
 const off = http.createServer((q, s) => queryCounter({ enabled: false })(q, s, () => s.end("x"))); await new Promise((x) => off.listen(5982, "127.0.0.1", x));
 r = await runRequest({ method: "GET", url: "http://127.0.0.1:5982/", tests: [], extract: [] }, {}); t("enabled:false adds no headers", r.queries === undefined);
+// A REAL database: node:sqlite, with a classic N+1 loop and a joined query.
+const { DatabaseSync } = await import("node:sqlite");
+const sqlite = instrument(new DatabaseSync(":memory:"));
+sqlite.exec("create table authors(id integer primary key, name text); create table posts(id integer primary key, author_id integer, title text)");
+for (let i = 1; i <= 6; i++) { sqlite.prepare("insert into authors(name) values (?)").run("a" + i); sqlite.prepare("insert into posts(author_id,title) values (?,?)").run(i, "t" + i); }
+const dbServer = http.createServer((req, res) => mw(req, res, () => {
+  let posts;
+  if (req.url === "/real-n1") { posts = sqlite.prepare("select * from posts").all().map((p) => ({ ...p, author: sqlite.prepare("select * from authors where id = ?").get(p.author_id) })); }
+  else posts = sqlite.prepare("select p.*, a.name as author from posts p join authors a on a.id = p.author_id").all();
+  res.writeHead(200, { "content-type": "application/json" }); res.end(JSON.stringify({ posts }));
+}));
+await new Promise((x) => dbServer.listen(5983, "127.0.0.1", x));
+const real = (p) => runRequest({ method: "GET", url: `http://127.0.0.1:5983${p}`, tests: [], extract: [] }, {});
+r = await real("/real-n1");
+t("real SQLite: the N+1 loop is counted (1 + 6 queries) and flagged", r.queries.count === 7 && /N\+1/.test(r.queryAdvice || ""), JSON.stringify(r.queries));
+r = await real("/real-joined");
+t("real SQLite: the JOIN is one query and not flagged", r.queries.count === 1 && !r.queryAdvice, JSON.stringify(r.queries));
+dbServer.close();
 server.close(); plain.close(); off.close();
 for (const [c, n] of out) console.log((c ? "PASS " : "FAIL ") + n);
 process.exit(0);

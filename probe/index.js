@@ -51,11 +51,14 @@ export function queryCounter({ enabled = true } = {}) {
 /**
  * Wraps the query methods of a database client so each call is counted and timed. Returns the same object.
  * Works for promise-returning and callback-style methods.
- * @param {object} client e.g. a pg Pool, mysql2 pool, knex instance
+ * Also understands synchronous SQLite clients (better-sqlite3, node:sqlite): it wraps `exec` and every statement
+ * returned by `prepare` (`run`, `get`, `all`, `iterate`).
+ * @param {object} client e.g. a pg Pool, mysql2 pool, knex instance, better-sqlite3 database
  * @param {string[]} [methods]
  */
-export function instrument(client, methods = ["query"]) {
-  for (const name of methods) {
+export function instrument(client, methods) {
+  if (!methods && typeof client?.query !== "function" && typeof client?.prepare === "function") return instrumentSqlite(client);
+  for (const name of methods || ["query"]) {
     const original = client?.[name];
     if (typeof original !== "function" || original.__dcWrapped) continue;
     const wrapped = function (...args) {
@@ -71,4 +74,24 @@ export function instrument(client, methods = ["query"]) {
     client[name] = wrapped;
   }
   return client;
+}
+
+/** SQLite style: db.exec(sql) and db.prepare(sql).run/get/all/iterate(...). Each execution counts as one query. */
+function instrumentSqlite(db) {
+  const timed = (fn, self, args) => { const started = performance.now(); try { return fn.apply(self, args); } finally { count(performance.now() - started); } };
+  if (typeof db.exec === "function" && !db.exec.__dcWrapped) {
+    const exec = db.exec; db.exec = function (...a) { return timed(exec, this, a); }; db.exec.__dcWrapped = true;
+  }
+  const prepare = db.prepare;
+  if (prepare.__dcWrapped) return db;
+  db.prepare = function (...a) {
+    const stmt = prepare.apply(this, a);
+    for (const name of ["run", "get", "all", "iterate"]) {
+      const original = stmt[name];
+      if (typeof original === "function") stmt[name] = function (...args) { return timed(original, this, args); };
+    }
+    return stmt;
+  };
+  db.prepare.__dcWrapped = true;
+  return db;
 }

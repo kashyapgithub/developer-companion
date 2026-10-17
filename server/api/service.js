@@ -5,6 +5,7 @@
  * behave the same. `guard` (optional) refuses URLs — pass makeAgentGuard() for the agent.
  */
 
+import { changesData } from "./safety.js";
 import * as store from "./store.js";
 import { runRequest } from "./runner.js";
 import { buildRequest } from "./build-request.js";
@@ -66,12 +67,15 @@ export function securityCheck(request, { collectionId, otherToken, guard, fetchI
 }
 
 /** Security probes for every request in a collection (first 25), one result each. */
-export async function securityCheckCollection(collectionRef, { otherToken, guard, fetchImpl } = {}) {
+export async function securityCheckCollection(collectionRef, { otherToken, guard, fetchImpl, readOnlyOnly = false } = {}) {
   const col = store.getState().collections.find((c) => c.id === collectionRef || c.name === collectionRef);
   if (!col) throw new Error(`No collection "${collectionRef}".`);
-  const results = [];
-  for (const request of col.requests.slice(0, 25)) results.push(await securityCheck(request, { collectionId: col.id, otherToken, guard, fetchImpl }));
-  return { collection: col.name, results };
+  const results = [], skipped = [];
+  for (const request of col.requests.slice(0, 25)) {
+    if (readOnlyOnly && changesData(request)) { skipped.push(`${request.method} ${request.name}`); continue; }   // agent without the user's go-ahead
+    results.push(await securityCheck(request, { collectionId: col.id, otherToken, guard, fetchImpl }));
+  }
+  return { collection: col.name, results, skipped };
 }
 
 /** Load test ("load") or simultaneous-requests test ("race") for one request. */

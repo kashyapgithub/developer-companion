@@ -19,7 +19,7 @@ const SAVE_KEY = "dcMotionScene";
 const HINTS = {
   draw: "Draw: press and drag on the plane. Shift+drag continues the selected curve (switch plane first to bend it into 3D). Right-drag turns the view, wheel zooms.",
   points: "Points: click to place points, double-click or Enter to finish, Backspace removes the last, Esc cancels.",
-  edit: "Edit: drag a white point of the selected curve. It moves on the chosen plane, so change the plane to move it in another direction.",
+  edit: "Edit: drag a white point of the selected curve; it slides in the plane facing you. Hold Shift to move it along the chosen drawing plane instead (changes its depth).",
   orbit: "Orbit: drag to turn the view, wheel to zoom.",
 };
 

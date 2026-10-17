@@ -11,6 +11,7 @@ import { z } from "zod";
 import * as store from "./store.js";
 import * as svc from "./service.js";
 import { makeAgentGuard } from "./agent-guard.js";
+import { changesData, needsPermission } from "./safety.js";
 
 const text = (obj) => ({ content: [{ type: "text", text: typeof obj === "string" ? obj : JSON.stringify(obj, null, 2) }] });
 const guardNow = () => makeAgentGuard(store.getState());
@@ -32,16 +33,18 @@ export function registerStressTools(server) {
       ref: z.string().optional().describe("Saved request id or 'Collection/Request' from api_list"),
       collection: z.string().optional().describe("Check every request of this collection instead (first 25)"),
       other_token: z.string().optional().describe("A second user's token, to test that one user can't read another's data"),
+      allow_changes: z.boolean().optional().describe("Needed for POST/PUT/PATCH/DELETE requests, which may create or change real data. Set it only after the user agreed."),
     },
-    async ({ ref, collection, other_token }) => {
+    async ({ ref, collection, other_token, allow_changes }) => {
       try {
         const guard = guardNow();
         if (collection) {
-          const r = await svc.securityCheckCollection(collection, { otherToken: other_token, guard });
-          return text({ collection: r.collection, results: r.results.map(agentSecurityView) });
+          const r = await svc.securityCheckCollection(collection, { otherToken: other_token, guard, readOnlyOnly: !allow_changes });
+          return text({ collection: r.collection, results: r.results.map(agentSecurityView), ...(r.skipped.length ? { skipped_not_read_only: r.skipped, note: needsPermission("These requests") } : {}) });
         }
         const found = ref && store.findRequest(ref);
         if (!found) return text("Give ref (a saved request) or collection. Use api_list to see what exists.");
+        if (changesData(found.request) && !allow_changes) return text(needsPermission(`${found.request.method} ${found.request.name}`));
         return text(agentSecurityView(await svc.securityCheck(found.request, { collectionId: found.collection.id, otherToken: other_token, guard })));
       } catch (err) { return text(`Failed: ${err.message}`); }
     },
@@ -58,11 +61,13 @@ export function registerStressTools(server) {
       total: z.number().optional().describe("load: how many requests (default 50)"),
       concurrency: z.number().optional().describe("load: how many at once (default 10)"),
       n: z.number().optional().describe("race: how many simultaneous requests (default 2)"),
+      allow_changes: z.boolean().optional().describe("Needed for POST/PUT/PATCH/DELETE requests: a load or race test would create or change many real records. Set it only after the user agreed."),
     },
-    async ({ ref, mode, total, concurrency, n }) => {
+    async ({ ref, mode, total, concurrency, n, allow_changes }) => {
       try {
         const found = store.findRequest(ref);
         if (!found) return text(`No saved request "${ref}". Use api_list to see what exists.`);
+        if (changesData(found.request) && !allow_changes) return text(needsPermission(`A ${mode} test of ${found.request.method} ${found.request.name}`));
         return text(await svc.stressTest(found.request, { mode, collectionId: found.collection.id, total, concurrency, n, guard: guardNow() }));
       } catch (err) { return text(`Failed: ${err.message}`); }
     },
