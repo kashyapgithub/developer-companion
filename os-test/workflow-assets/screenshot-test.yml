@@ -1,0 +1,130 @@
+# -----------------------------------------------------------------------------
+# screenshot-test.yml
+#
+# Triggered by the Chrome extension via a `repository_dispatch` API call with
+# event_type "cross-os-test" and a client_payload of
+# { target_url, run_tag, full_page }.
+#
+# For each OS in the matrix, a real GitHub-hosted runner opens `target_url`
+# in a pinned Playwright/Chromium version (see package.json), saves a
+# screenshot (full-page or viewport-only, per full_page), then commits it to
+# the `results` branch under results/<run_tag>/<os>-<browser>.png — which
+# the extension polls for via the GitHub Contents API.
+# -----------------------------------------------------------------------------
+
+name: Cross-OS Screenshot Test
+
+on:
+  repository_dispatch:
+    types: [cross-os-test]
+
+jobs:
+  screenshot:
+    # Without this, GITHUB_TOKEN defaults to read-only on many repos and the
+    # git push step below fails with a permission error identical to the
+    # one we hit manually with an under-scoped PAT earlier.
+    permissions:
+      contents: write
+
+    strategy:
+      # Each OS runs independently and in parallel — one failing OS doesn't
+      # block the others from finishing and being committed.
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install Playwright and requested browsers
+        env:
+          BROWSERS: ${{ github.event.client_payload.browsers }}
+        run: |
+          npm ci
+          IFS=',' read -r -a BROWSERS_ARR <<< "${BROWSERS:-chromium,firefox,webkit}"
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            npx playwright install --with-deps "${BROWSERS_ARR[@]}"
+          else
+            npx playwright install "${BROWSERS_ARR[@]}"
+          fi
+        shell: bash
+
+      - name: Checkout results branch
+        uses: actions/checkout@v4
+        with:
+          ref: results
+          path: results-branch
+          fetch-depth: 1
+
+      - name: Capture screenshots and commit to results branch
+        shell: bash
+        env:
+          TEST_MODE: ${{ github.event.client_payload.test_mode }}
+          TARGET_URL: ${{ github.event.client_payload.target_url }}
+          REPO_PATH: ${{ github.event.client_payload.repo_path }}
+          FULL_PAGE: ${{ github.event.client_payload.full_page }}
+          RUN_TAG: ${{ github.event.client_payload.run_tag }}
+          BROWSERS: ${{ github.event.client_payload.browsers }}
+        run: |
+          case "$RUNNER_OS" in
+            Windows) OS_LABEL="windows" ;;
+            macOS)   OS_LABEL="macos" ;;
+            *)       OS_LABEL="linux" ;;
+          esac
+
+          if [ "$TEST_MODE" = "repo" ] || [ -z "$TARGET_URL" ]; then
+            echo "Direct repo test mode active. Starting local static server on port 3000..."
+            node scripts/serve.js 3000 . &
+            SERVER_PID=$!
+            sleep 2
+            CLEAN_PATH="${REPO_PATH:-index.html}"
+            CLEAN_PATH="${CLEAN_PATH#/}"
+            EFFECTIVE_URL="http://127.0.0.1:3000/${CLEAN_PATH}"
+          else
+            EFFECTIVE_URL="$TARGET_URL"
+          fi
+          echo "Target test URL: $EFFECTIVE_URL"
+
+          DEST_DIR="results-branch/results/${RUN_TAG}"
+          mkdir -p "${DEST_DIR}"
+
+          cd results-branch || exit 1
+          git config user.name "cross-os-tester-bot"
+          git config user.email "actions@github.com"
+          cd .. || exit 1
+
+          IFS=',' read -r -a BROWSER_LIST <<< "${BROWSERS:-chromium,firefox,webkit}"
+          for browser in "${BROWSER_LIST[@]}"; do
+            browser=$(echo "$browser" | tr -d '[:space:]')
+            if [ -z "$browser" ]; then continue; fi
+
+            echo "Capturing $browser on $OS_LABEL..."
+            OUTPUT_FILE="screenshot-${OS_LABEL}-${browser}.png"
+            if TARGET_URL="$EFFECTIVE_URL" BROWSER="$browser" OUTPUT_PATH="$OUTPUT_FILE" node scripts/capture.js; then
+              if [ -f "$OUTPUT_FILE" ]; then
+                cp "$OUTPUT_FILE" "${DEST_DIR}/${OS_LABEL}-${browser}.png"
+
+                cd results-branch || exit 1
+                git add "results/${RUN_TAG}/${OS_LABEL}-${browser}.png"
+                git commit -m "Add ${OS_LABEL}-${browser} screenshot for ${RUN_TAG}" || true
+
+                for attempt in 1 2 3 4 5; do
+                  echo "Push attempt ${attempt}/5..."
+                  git pull --rebase -X ours origin results && git push origin results && break
+                  sleep 5
+                done
+                cd .. || exit 1
+              fi
+            else
+              echo "::warning::Capture step for $browser on $OS_LABEL exited with non-zero status; continuing matrix loop."
+            fi
+          done

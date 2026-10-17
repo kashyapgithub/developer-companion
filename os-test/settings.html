@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Cross-OS Test — Setup</title>
+  <link rel="stylesheet" href="settings.css" />
+</head>
+<body>
+  <main class="setup-card">
+    <header class="setup-card__header">
+      <span class="setup-card__tag">cross-os</span>
+      <h1>One-time GitHub Setup</h1>
+    </header>
+
+    <p class="setup-card__hint">
+      This tool uses your GitHub repository and cloud Actions runners to capture screenshots of your site across Windows, macOS, and Linux for free. Your token is stored <strong>locally in your browser</strong> and never leaves your machine.
+      If you already connected your <strong>GitHub Dashboard</strong>, leave the token empty and it will be reused automatically — you only need to fill in the owner and repo name of the target repo holding the test workflow.
+    </p>
+
+    <section class="token-helper">
+      <h2>Step 1: Create a Personal Access Token</h2>
+      <p class="token-helper__desc">Choose whichever token type you prefer:</p>
+
+      <div class="token-options">
+        <div class="token-choice">
+          <h3>Option A: Classic Token (Fastest — 1 Click)</h3>
+          <p>Creates a classic token with the <code>repo</code> scope pre-selected.</p>
+          <a
+            class="token-btn"
+            href="https://github.com/settings/tokens/new?description=Developer%20Companion%20Cross-OS%20Tester&scopes=repo"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Create Pre-filled Classic Token ↗
+          </a>
+        </div>
+
+        <div class="token-choice">
+          <h3>Option B: Fine-grained Token (Scoped)</h3>
+          <p>
+            Go to <a href="https://github.com/settings/tokens?type=beta" target="_blank" rel="noopener noreferrer">github.com/settings/tokens?type=beta</a>, scope to your repo, and grant:
+          </p>
+          <ul>
+            <li><strong>Actions</strong>: Read and write</li>
+            <li><strong>Contents</strong>: Read and write</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="setup-form-section">
+      <h2>Step 2: Enter Details & Verify Connection</h2>
+      <form id="setup-form">
+        <label for="pat-input">GitHub Personal Access Token (PAT) — empty = reuse Dashboard token</label>
+        <div class="input-with-action">
+          <input
+            id="pat-input"
+            type="password"
+            placeholder="ghp_... or github_pat_... (leave empty to reuse Dashboard token)"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <button id="toggle-token-btn" class="secondary-btn" type="button" aria-label="Toggle token visibility">Show</button>
+        </div>
+
+        <label for="owner-input">Repo Owner (your GitHub username or org)</label>
+        <input id="owner-input" type="text" placeholder="e.g. kashyapgithub" spellcheck="false" required />
+
+        <label for="repo-input">Repo Name (the repo containing the cross-os-test workflow)</label>
+        <input id="repo-input" type="text" placeholder="e.g. website-cross-operating-system-testing" spellcheck="false" required />
+
+        <button id="save-btn" class="primary-btn" type="submit">Verify & Save Connection</button>
+      </form>
+
+      <div id="status-message" class="setup-card__status" role="status" aria-live="polite"></div>
+    </section>
+
+    <section class="guide-section">
+      <h2>Step 3: How to Test Any UI</h2>
+      <ol class="guide-steps">
+        <li><strong>Prepare the target repo</strong>: the repo you test from must contain the Cross-OS workflow. Copy the files from the extension's <code>os-test/workflow-assets/</code> folder (<code>screenshot-test.yml</code> under <code>.github/workflows/</code>, plus <code>scripts/</code> and <code>package.json</code>) and create an empty <code>results</code> branch.</li>
+        <li><strong>Open the site you want to test</strong> in Google Chrome (HTTP or HTTPS), then click the <strong>Cross-OS Test</strong> button in the Developer Companion canvas toolbar.</li>
+        <li><strong>Configure capture mode</strong>: Select <em>Full page</em> or <em>Visible area</em>, and check the target browsers (Chrome, Firefox, Safari/WebKit).</li>
+        <li><strong>Click "Run test"</strong>: Runners spin up on Windows, macOS, and Linux in the cloud and stream results back live.</li>
+        <li><strong>Inspect & Compare</strong>:
+          <ul>
+            <li>Click <strong>Expand all</strong> to view all 9 screenshots side-by-side.</li>
+            <li>Click <strong>any screenshot</strong> to open the full-resolution Lightbox zoom modal.</li>
+          </ul>
+        </li>
+      </ol>
+    </section>
+  </main>
+
+  <script src="settings.js" type="module"></script>
+</body>
+</html>

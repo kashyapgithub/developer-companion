@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Developer Companion",
-  "version": "1.0.0",
-  "description": "Show your coding agent what you want and what broke: sketch UI, send browser logs, and share your repos through one local connection.",
+  "version": "1.1.0",
+  "description": "All-in-one developer companion: UI Sketch Canvas, GitHub Repo Dashboard, Browser Log Streamer, and Cross-OS Website Tester with unified MCP Agent bridge.",
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
@@ -49,6 +49,7 @@
     {
       "resources": [
         "editor/*",
+        "os-test/*",
         "icons/*"
       ],
       "matches": [

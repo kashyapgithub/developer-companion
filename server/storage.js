@@ -181,7 +181,9 @@ export function readScreenshot(sessionId, name) {
 
 export function insertLogs(rows) {
   const db = getDb();
-  const list = Array.isArray(rows) ? rows : [rows];
+  const list = (Array.isArray(rows) ? rows : [rows]).filter(
+    (r) => r && typeof r === "object" && !Array.isArray(r)
+  );
   const now = new Date().toISOString();
 
   const insert = db.prepare(`
@@ -225,7 +227,6 @@ export function insertLogs(rows) {
 
   return list.length;
 }
-
 export function queryRecentLogs({ app, level, minutes = 60, limit = 100 } = {}) {
   const db = getDb();
   const since = new Date(Date.now() - minutes * 60 * 1000).toISOString();
