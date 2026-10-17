@@ -15,6 +15,7 @@ import { z } from "zod";
 import { pickRequest, buildTrace } from "./trace.js";
 import { saveBaseline, readBaseline, diffPng } from "./visual-diff.js";
 import { registerCheckTools } from "./check-tools.js";
+import { registerVitalsTool } from "./vitals-tools.js";
 
 const NO_ANSWER = "The browser didn't answer. Is Chrome open with the Developer Companion extension, and is the app open on an allowed site (localhost by default)?";
 
@@ -39,6 +40,7 @@ export function registerBrowserTools(server, ctx) {
 
   // acceptance checks + vitals live in their own files
   registerCheckTools(server, ctx);
+  registerVitalsTool(server, ctx);
 
   // ---- 1. network inspector ------------------------------------------------------
   server.tool(

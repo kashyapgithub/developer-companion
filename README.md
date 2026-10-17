@@ -208,6 +208,41 @@ Press the **API** button in the editor's top bar. A small window opens (not a ta
 
 Requests are sent by the local bridge, so they come from the computer the bridge runs on (matters if it runs in a VM). Your agent can use the same collections with `api_list`, `api_run`, `api_run_collection` and `api_save`. The agent may only call `localhost` and hosts that appear in your environments or collections; you can call anything from the window. Saved data lives in the bridge's store folder under `api/`.
 
+### Security checks, load and double-submit tests
+Open a request in the API window and press **Security**, **Load** or **Double-submit**. The 🛡 next to a collection checks every request in it.
+- **Security** tries the request without a token, with a bad token, as another user (paste a second user's token to test "can I read someone else's data?"), with extra fields (mass assignment), broken and oversized JSON, injection strings, and looks for missing security headers and leaked secrets or stack traces in responses. Each finding says what was sent and what came back.
+- **Load** sends many requests with a few at a time (up to 500 / 50) and reports requests per second, errors and p50 / p95 / p99.
+- **Double-submit** fires the same request several times at once (up to 20) and tells you if it created duplicate records, the classic double-click and retry bug.
+
+Only point these at servers you own. Your agent can use them too: `api_security` and `api_stress`.
+
+### 3D motion: draw how things should move
+Press the **3D motion** button in the editor's top bar. A window opens with a 3D space (floor grid, axes, and a box showing your element's size).
+- Pick the **plane** you draw on (front, floor or side) and its **offset**, then **Draw** a freehand curve, or use **Points** to click a path. Change the plane and **Shift+drag** to continue the same curve in another direction, which is how a curve becomes truly 3D. **Edit** drags points. Right-drag turns the view, the wheel zooms.
+- Every curve has its own **colour**, **label**, what it moves (`.card`, `logo`…), duration, easing, loop and notes. Labels show on the curves.
+- Set the **perspective** and the element size, and write the motion in your own words.
+
+**Send motion to agent** gives your agent `get_latest_motion`: each curve with its label and colour, ready CSS `@keyframes` using `translate3d` (relative to the start, so 0% is where the element sits), the `perspective` to use, the control points, your words and a picture. Axes follow CSS: x right, y down, z toward you.
+
+### Acceptance checks: prove it works
+Your agent runs `run_checks` with plain Given/When/Then text and your real browser does it, with real clicks and typing:
+
+```
+Scenario: Sign in
+  Given I open /login
+  When I type "a@b.co" into #email
+  And I click "Sign in"
+  Then I see "Welcome"
+  And the url contains /dashboard
+  And POST /api/login returned 200
+  And there are no console errors
+```
+
+A check stops at its first failing step and returns evidence: the step and why, a screenshot, console errors, failed requests and what the page said instead. `checks_from_recording` turns a session you recorded into a draft check (typed values are never recorded, so you add those). Only allowed sites are driven.
+
+### Web vitals: did it get slower?
+`get_vitals` measures LCP, INP and CLS (plus FCP, TTFB and main-thread blocking) in your real tab, rated good / needs work / poor, with the reason: which element is the LCP, what shifts the layout, which click was slow and whether it was waiting, running or painting. Save a **baseline** before a change and **compare** after it to see if it regressed. INP needs an interaction first, so click around or run `run_checks` before asking.
+
 ### Session handoff: move your work to another machine
 Open the gear (Agent settings) and press **Export handoff**. You get one `.json` file with your sketch, X-ray selection, video review notes and frames (not the video file), and your inspiration library. On the other computer or VM, press **Import handoff** and pick the file. Importing twice doesn't duplicate your inspiration images. Your agent can also create the file itself with `export_handoff`.
 
@@ -266,6 +301,10 @@ Click **GitHub** to browse your repositories with language filters, search, tags
 | `set_mock`, `list_mocks`, `clear_mocks` | Fake API responses (errors, empty, slow, failing) for your running app. |
 | `get_latest_flow` | The flowchart you sent with **Explain flow**: your explanation, Mermaid, blocks and arrows, a picture, and anything unfinished. |
 | `api_list`, `api_run`, `api_run_collection`, `api_save` | Use your API client collections: list them, send a request, run a whole collection with its tests, save a new request. |
+| `api_security`, `api_stress` | Security probes (no auth, bad token, other user, mass assignment, injection, headers, leaks) and load / double-submit tests for requests you own. |
+| `get_latest_motion` | The 3D curves you drew: labels, colours, CSS `translate3d` keyframes, perspective, your words and a picture. |
+| `run_checks`, `checks_from_recording` | Run Given/When/Then checks in your real tab with evidence on failure; draft a check from a recording. |
+| `get_vitals` | LCP, INP, CLS with causes, plus baseline save and compare. |
 | `watch_console` | Follows your browser live (needs **Stream** on): console, network requests with bodies, navigation and clicks, with a cursor to continue. |
 | `export_handoff` | Packs the whole session into one file to hand over. |
 
