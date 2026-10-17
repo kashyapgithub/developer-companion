@@ -8,7 +8,7 @@ import { runLoad, runRace, percentile, idsOf } from "../../server/api/load.js";
 import { cleanRequest } from "../../server/api/store.js";
 const out = []; const t = (n, c, x = "") => out.push([c, n + (x ? " — " + x : "")]);
 
-let orderSeq = 0, locked = false;
+let orderSeq = 0, locked = false; const seen = {};
 const send = (res, code, body, headers = {}) => { res.writeHead(code, { "content-type": "application/json", ...headers }); res.end(typeof body === "string" ? body : JSON.stringify(body)); };
 const server = http.createServer((req, res) => {
   let raw = ""; req.on("data", (c) => (raw += c)); req.on("end", async () => {
@@ -30,6 +30,10 @@ const server = http.createServer((req, res) => {
     }
     if (path === "/orders") { await new Promise((r) => setTimeout(r, 15)); orderSeq += 1; return send(res, 201, { id: orderSeq }); }
     if (path === "/once") { await new Promise((r) => setTimeout(r, 15)); if (locked) return send(res, 409, {}); locked = true; return send(res, 201, { id: 1 }); }
+    if (path === "/pay-naive") { orderSeq += 1; return send(res, 201, { id: orderSeq }); }          // ignores Idempotency-Key
+    if (path === "/pay-safe") { const k = req.headers["idempotency-key"]; if (!k) return send(res, 400, {}); seen[k] ||= ++orderSeq; return send(res, 201, { id: seen[k] }); }
+    if (path === "/me") return auth === "Bearer good" || auth === "Bearer old" ? send(res, 200, { me: 1 }, { "x-content-type-options": "nosniff" }) : send(res, 401, {});
+    if (path === "/me-revoking") return auth === "Bearer good" ? send(res, 200, { me: 1 }, { "x-content-type-options": "nosniff" }) : send(res, 401, {});
     if (path === "/flaky") return Math.random() < 0.5 ? send(res, 500, {}) : send(res, 200, {});
     if (path === "/slow") { await new Promise((r) => setTimeout(r, 20)); return send(res, 200, {}); }
     send(res, 404, {});
@@ -42,6 +46,18 @@ const req = (o) => cleanRequest({ method: "GET", ...o, url: base + o.url });
 const find = (rep, id) => rep.probes.find((p) => p.id === id);
 
 // ---- security ----
+const pay = (u) => req({ method: "POST", url: u, auth: bearer("good"), body: { mode: "json", content: '{"amount":5}' } });
+let rr = await runSecurity(pay("/pay-naive"));
+t("a retry that creates a second record is flagged", find(rr, "idempotency").status === "warn" && /two different records/.test(find(rr, "idempotency").detail), find(rr, "idempotency").detail);
+rr = await runSecurity(pay("/pay-safe"));
+t("a retry with the same key returning the same record passes", find(rr, "idempotency").status === "pass", find(rr, "idempotency").detail);
+t("GET requests skip the retry check", find(await runSecurity(req({ url: "/safe", auth: bearer("good") })), "idempotency").status === "skip");
+rr = await runSecurity(req({ url: "/me", auth: bearer("good") }), { variables: { expiredToken: "old" } });
+t("an old token that still works fails", find(rr, "expired-token").status === "fail");
+rr = await runSecurity(req({ url: "/me-revoking", auth: bearer("good") }), { variables: { expiredToken: "old" } });
+t("an old token that is refused passes", find(rr, "expired-token").status === "pass");
+t("the old-token check is skipped without the variable", find(await runSecurity(req({ url: "/me", auth: bearer("good") })), "expired-token").status === "skip");
+
 let r = await runSecurity(req({ url: "/open", auth: bearer("good") }));
 t("an open endpoint fails the no-credentials check", find(r, "no-auth").status === "fail");
 t("and accepts a made-up token", find(r, "bad-token").status === "fail");

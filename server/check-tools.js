@@ -62,7 +62,10 @@ export function registerCheckTools(server, { askBrowser }) {
       const id = session || latestRecordingId();
       if (!id) return text("No recording yet. Ask the user to press Record in the extension, do the flow, and press Stop.");
       const rows = queryRecording(id, { verbosity: "all", limit: 2000 });
-      const draft = checksFromRecording(rows, { name });
+      // The end of the recorded flow is usually still on screen: read it to draft the "I see …" expectations.
+      const page = await askBrowser("suggest_assertions", {}, 8000);
+      const suggestions = page?.status === "done" ? page.result.suggestions || [] : [];
+      const draft = checksFromRecording(rows, { name, suggestions });
       return text(`Draft from recording ${id}:\n\n${draft.scenario}\n\nTo finish:\n${draft.notes.map((n) => `- ${n}`).join("\n")}\n\nPass the final text to run_checks as \`scenarios\`.`);
     },
   );

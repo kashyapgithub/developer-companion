@@ -204,7 +204,7 @@ Press the **API** button in the editor's top bar. A small window opens (not a ta
 - A request builder: method, URL, params, headers, auth (bearer, basic, API key) and body (JSON, text, form).
 - **Tests**: simple checks on the response (status, JSON field, header, body, time). No scripting needed.
 - **Extract**: save a value from a response (for example a login token) into the environment, so the next request can use `{{token}}`. **Run collection** (the ▶ next to a collection) runs everything in order.
-- **Import** from a curl command or a Postman v2.1 collection / environment, or pull calls your app made from **From traffic**. **Copy curl** goes the other way.
+- **Import** from a curl command or a Postman v2.1 collection / environment (common `pm.test` and `pm.environment.set` scripts become Tests and Extract rules; anything else is listed, never silently dropped), or pull calls your app made from **From traffic**. **Copy curl** goes the other way.
 
 Requests are sent by the local bridge, so they come from the computer the bridge runs on (matters if it runs in a VM). Your agent can use the same collections with `api_list`, `api_run`, `api_run_collection` and `api_save`. The agent may only call `localhost` and hosts that appear in your environments or collections; you can call anything from the window. Saved data lives in the bridge's store folder under `api/`.
 
@@ -214,7 +214,20 @@ Open a request in the API window and press **Security**, **Load** or **Double-su
 - **Load** sends many requests with a few at a time (up to 500 / 50) and reports requests per second, errors and p50 / p95 / p99.
 - **Double-submit** fires the same request several times at once (up to 20) and tells you if it created duplicate records, the classic double-click and retry bug.
 
+Security also checks that a **retry with the same `Idempotency-Key`** doesn't create a second record, and (if you set an environment variable `expiredToken`) that an **old, logged-out token is refused**.
+
 Only point these at servers you own. Your agent can use them too: `api_security` and `api_stress`.
+
+### Spot N+1 queries with the optional backend helper
+A browser can't see inside your server, so the folder `probe/` is a tiny zero-dependency helper for your Node backend:
+
+```js
+import { queryCounter, instrument } from "./probe/index.js";
+app.use(queryCounter({ enabled: process.env.NODE_ENV !== "production" }));  // before your routes
+instrument(pool);                                                            // pg, mysql2, knex…: wraps .query
+```
+
+Responses then carry `x-dc-queries` and `x-dc-query-ms`. The API client shows a **N queries** chip, warns on the N+1 shape (about as many queries as items in the list), and you can add a test **DB queries < 10**. The agent's `api_run` gets the same numbers. Prisma: `prisma.$on("query", (e) => count(Number(e.duration)))`.
 
 ### 3D motion: draw how things should move
 Press the **3D motion** button in the editor's top bar. A window opens with a 3D space (floor grid, axes, and a box showing your element's size).
@@ -238,7 +251,7 @@ Scenario: Sign in
   And there are no console errors
 ```
 
-A check stops at its first failing step and returns evidence: the step and why, a screenshot, console errors, failed requests and what the page said instead. `checks_from_recording` turns a session you recorded into a draft check (typed values are never recorded, so you add those). Only allowed sites are driven.
+A check stops at its first failing step and returns evidence: the step and why, a screenshot, console errors, failed requests and what the page said instead. `checks_from_recording` turns a session you recorded into a draft check, and adds "I see …" lines from what the page shows at the end (typed values are never recorded, so you add those). Only allowed sites are driven.
 
 ### Web vitals: did it get slower?
 `get_vitals` measures LCP, INP and CLS (plus FCP, TTFB and main-thread blocking) in your real tab, rated good / needs work / poor, with the reason: which element is the LCP, what shifts the layout, which click was slow and whether it was waiting, running or painting. Save a **baseline** before a change and **compare** after it to see if it regressed. INP needs an interaction first, so click around or run `run_checks` before asking.

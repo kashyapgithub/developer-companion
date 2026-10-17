@@ -65,7 +65,18 @@ await win.type("#dlg-import textarea", "curl -X POST http://127.0.0.1:5975/order
 await win.evaluate(() => [...document.querySelectorAll("#dlg-import button")].find((b) => b.textContent === "Import").click()); await wait(900);
 t("the curl import appears in the sidebar", /\/orders/.test(await win.$eval("#tree", (e) => e.textContent)));
 
+// 6b. A Postman collection with scripts: they become tests, and the dialog says so.
+const pmColl = JSON.stringify({ info: { name: "Scripted" }, item: [{ name: "Ping", request: { method: "GET", url: "http://127.0.0.1:5975/ping" }, event: [{ listen: "test", script: { exec: ["pm.test('ok', function () {", "  pm.response.to.have.status(200);", "});", "const j = pm.response.json();", "pm.environment.set('pingN', j.n);", "doSomethingElse();"] } }] }] });
+await win.click("#import-btn"); await wait(300);
+await win.evaluate((v) => { const ta = document.querySelector("#dlg-import textarea"); ta.value = v; ta.dispatchEvent(new Event("input", { bubbles: true })); }, pmColl);
+await win.evaluate(() => [...document.querySelectorAll("#dlg-import button")].find((b) => b.textContent === "Import").click()); await wait(900);
+t("the Postman import says what it converted and what it left", /turned scripts into 1 test and 1 extract rule/.test(await win.$eval("#toast", (e) => e.textContent)) && /can't be converted/.test(await win.$eval("#toast", (e) => e.textContent)), await win.$eval("#toast", (e) => e.textContent));
+await win.evaluate(() => [...document.querySelectorAll("#tree .tree-req, #tree [data-req], #tree *")].find((n) => n.textContent.trim() === "GETPing" || /^Ping$/.test(n.textContent.trim()))?.click()); await wait(400);
+await win.click("#send"); await wait(900);
+t("the converted test runs in the window", /1\/1 tests/.test(await win.$eval("#resp-bar", (e) => e.textContent)), await win.$eval("#resp-bar", (e) => e.textContent));
+
 // 7. Copy as curl works from the form (server builds it).
+await win.evaluate(() => window.__dcApi.editor.set({ method: "GET", url: "{{baseUrl}}/from-env", name: "env", tests: [] }));
 const curl = await win.evaluate(async () => { const { api } = await import("./modules/client.js"); return (await api.curl(window.__dcApi.editor.get(), "")).curl; });
 t("the form converts to a curl command", /^curl /.test(curl) && /from-env/.test(curl), curl);
 

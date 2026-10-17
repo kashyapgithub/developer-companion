@@ -1,0 +1,8 @@
+{
+  "name": "developer-companion-probe",
+  "version": "1.0.0",
+  "description": "Adds x-dc-queries headers so Developer Companion can warn about N+1 queries.",
+  "type": "module",
+  "main": "index.js",
+  "license": "MIT"
+}

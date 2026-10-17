@@ -6,12 +6,24 @@
 import { el, fill } from "./dom.js";
 import { api } from "./client.js";
 
+/** What the server reports about a Postman import, as short sentences (nothing is hidden silently). */
+export function importNotes(n = {}) {
+  const out = [];
+  if (n.testsConverted || n.extractsConverted) out.push(`turned scripts into ${n.testsConverted || 0} test${n.testsConverted === 1 ? "" : "s"} and ${n.extractsConverted || 0} extract rule${n.extractsConverted === 1 ? "" : "s"}`);
+  if (n.preRequestScripts) out.push(`${n.preRequestScripts} pre-request script${n.preRequestScripts > 1 ? "s" : ""} not imported (set those values by hand)`);
+  const left = (n.scripts || 0) - (n.preRequestScripts || 0);
+  if (left > 0) out.push(`${left} script${left > 1 ? "s" : ""} had lines that can't be converted${n.ignoredLines?.length ? `, e.g. "${n.ignoredLines[0]}"` : ""}`);
+  if (n.unsupportedBodies) out.push(`${n.unsupportedBodies} file/form-data bod${n.unsupportedBodies > 1 ? "ies" : "y"} skipped`);
+  return out;
+}
+
 /** One-line summary of what an import created. */
 export function describeImport(r) {
   if (r.kind === "curl") return `Imported ${r.request.method} ${r.request.url}`;
   if (r.kind === "environment") return `Imported environment "${r.environment.name}"`;
   const n = r.collection.requests.length;
-  const notes = (r.notes || []).length ? ` (${r.notes.length} note${r.notes.length > 1 ? "s" : ""}: ${r.notes.slice(0, 2).join("; ")})` : "";
+  const list = importNotes(r.notes);
+  const notes = list.length ? ` — ${list.join("; ")}` : "";
   return `Imported "${r.collection.name}" with ${n} request${n === 1 ? "" : "s"}${notes}`;
 }
 

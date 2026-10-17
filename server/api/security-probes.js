@@ -13,6 +13,7 @@
  */
 
 import { substitute } from "./vars.js";
+import { idsOf } from "./load.js";
 
 const AUTH_HEADERS = /^(authorization|cookie|x-api-key|x-auth-token|proxy-authorization)$/i;
 const AUTH_PARAMS = /^(token|access_token|api_key|apikey|key)$/i;
@@ -42,6 +43,13 @@ function withoutAuth(req) {
 
 /** A copy that authenticates with `token` instead. */
 const withToken = (req, token) => ({ ...withoutAuth(req), auth: { type: "bearer", token } });
+
+/** A copy with one header added (replacing the same name). */
+function withHeader(req, key, value) {
+  const r = clone(req);
+  r.headers = [...(r.headers || []).filter((h) => h.key.toLowerCase() !== key.toLowerCase()), { key, value, enabled: true }];
+  return r;
+}
 
 /** The JSON body as an object (after variables are filled in), or null. */
 function jsonBody(req, vars) {
@@ -134,6 +142,26 @@ export const PROBES = [
       if (res.ok && /html/i.test(res.headers?.["content-type"] || "") && text(res).includes("<script>alert(1)</script>")) return fail("The script tag came back unescaped in an HTML response (XSS).");
       return pass(res.ok ? `Handled it (${res.status}).` : "Rejected the connection.");
     },
+  },
+  {
+    // Sends the SAME request twice with the same Idempotency-Key (the safe way to retry a payment or order).
+    id: "idempotency", title: "Safe to retry? (Idempotency-Key)", repeat: 2,
+    applies: (req) => MUTATING.has(req.method), make: (req) => withHeader(req, "Idempotency-Key", `dc-probe-${Math.random().toString(36).slice(2, 10)}`),
+    judge: (res, ctx) => {
+      const a = res, b = ctx.second;
+      if (!(a.ok && a.status < 300) || !b?.ok) return warn(`Couldn't compare: answered ${code(a)} then ${b ? code(b) : "nothing"}.`);
+      const ida = idsOf(a.body).join("|"), idb = idsOf(b.body).join("|");
+      if (b.status === 409 || b.status === 422) return pass(`The retry was refused (${b.status}), so nothing was done twice.`);
+      if (ida && idb && ida !== idb) return warn(`The same Idempotency-Key created two different records (${ida} and ${idb}). A retry after a timeout would do the action twice. Store the key and return the first result.`);
+      return a.body === b.body ? pass("The retry returned the identical result.") : warn("The retry answered differently. Make sure a retry returns the first result.");
+    },
+  },
+  {
+    // The token of a user who logged out / whose session expired should be dead. Needs the variable expiredToken.
+    id: "expired-token", title: "Rejects an old (logged-out) token?",
+    applies: (req, ctx) => hasAuth(req) && !!ctx.expiredToken, make: (req, ctx) => withToken(req, ctx.expiredToken),
+    skipDetail: "Set an environment variable named expiredToken (a token from before logout) to test this.",
+    judge: (res) => isDenied(res) ? pass(`Refused with ${res.status}.`) : res.ok && res.status < 400 ? fail(`An old token still works (${res.status}). Logging out or expiry doesn't revoke it.`) : warn(`Answered ${code(res)}.`),
   },
   {
     id: "headers", title: "Safe response headers?",

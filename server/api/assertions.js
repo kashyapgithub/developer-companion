@@ -7,6 +7,7 @@
  *   { type: "json",   path: "items", op: "type", value: "array" }       contains, gt, lt, matches, type
  *   { type: "body",   op: "contains", value: "ok" }
  *   { type: "time",   op: "lt", value: 500 }               response time in ms
+ *   { type: "queries", op: "lt", value: 10 }              database queries the request ran (needs probe/ on the server)
  *
  * No scripting on purpose: declarative checks are safe to run for the agent and easy to read.
  */
@@ -71,6 +72,7 @@ export function runAssertions(tests = [], res) {
       case "header": actual = res.headers[String(t.name).toLowerCase()]; pass = compare(t.op || "exists", actual, t.value); break;
       case "json": actual = getPath(res.json, t.path); pass = compare(t.op || "exists", actual, t.value); break;
       case "body": actual = undefined; pass = compare(t.op || "contains", res.bodyText, t.value); break;
+      case "queries": actual = res.queries?.count; pass = actual === undefined ? false : compare(t.op || "lt", actual, t.value); if (actual === undefined) return { name: describeTest(t), pass: false, actual: "the server doesn't report query counts (see probe/)" }; break;
       case "time": actual = res.durationMs; pass = compare(t.op || "lt", res.durationMs, t.value); break;
       default: return { name: describeTest(t), pass: false, actual: `unknown test type "${t.type}"` };
     }

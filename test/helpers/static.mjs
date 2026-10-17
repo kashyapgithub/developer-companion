@@ -16,7 +16,7 @@ const DEMO_PAGE = "<html><body style='height:2000px'><h1>Host page</h1><div styl
 
 // A small "app" for the acceptance-check tests: sign in with fetch, then see a dashboard.
 const SHOP_PAGE = `<html><head><title>Shop</title></head><body><h1>Sign in</h1>
-<input id="email" placeholder="email"><button id="go" type="button">Sign in</button><div id="msg"></div><button id="boom" type="button">Explode</button>
+<input id="email" placeholder="email"><button id="go" type="button">Sign in</button><div id="msg" class="alert"></div><button id="boom" type="button">Explode</button>
 <script>
 document.getElementById("go").onclick = async () => {
   const r = await fetch("/api/login", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ email: document.getElementById("email").value }) });

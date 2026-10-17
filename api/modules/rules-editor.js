@@ -11,11 +11,11 @@
 
 import { el, fill } from "./dom.js";
 
-const TYPES = [["status", "Status"], ["json", "JSON field"], ["header", "Header"], ["body", "Body text"], ["time", "Time (ms)"]];
+const TYPES = [["status", "Status"], ["json", "JSON field"], ["header", "Header"], ["body", "Body text"], ["time", "Time (ms)"], ["queries", "DB queries"]];
 const OPS = ["equals", "not_equals", "contains", "exists", "not_exists", "gt", "lt", "matches", "type"];
 const OP_LABEL = { equals: "equals", not_equals: "does not equal", contains: "contains", exists: "exists", not_exists: "doesn't exist", gt: "is greater than", lt: "is less than", matches: "matches regex", type: "has type" };
 const NEEDS_VALUE = (op) => !["exists", "not_exists"].includes(op);
-const DEFAULTS = { status: { op: "equals", value: "200" }, json: { op: "exists", path: "" }, header: { op: "contains", name: "content-type", value: "json" }, body: { op: "contains", value: "" }, time: { op: "lt", value: "1000" } };
+const DEFAULTS = { status: { op: "equals", value: "200" }, json: { op: "exists", path: "" }, header: { op: "contains", name: "content-type", value: "json" }, body: { op: "contains", value: "" }, time: { op: "lt", value: "1000" }, queries: { op: "lt", value: "10" } };
 
 const select = (options, current, onchange) =>
   el("select", { onchange: (e) => onchange(e.target.value) }, options.map(([v, label]) => el("option", { value: v, selected: v === current }, label)));

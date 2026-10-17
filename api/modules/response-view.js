@@ -42,6 +42,7 @@ export function createResponseView(els) {
     fill(els.bar,
       el("span", { class: `chip ${statusClass(r.status)}` }, `${r.status} ${r.statusText || ""}`.trim()),
       el("span", {}, `${r.durationMs} ms`), el("span", {}, humanBytes(r.size)),
+      r.queries ? el("span", { class: `chip ${r.queryAdvice ? "warn" : ""}`, title: r.queryAdvice || "Database queries this request ran" }, `${r.queries.count} queries`) : null,
       r.truncated ? el("span", { class: "chip warn" }, "body cut at 2 MB") : null,
       r.tests.length ? el("span", { class: `chip ${r.testsPassed ? "ok" : "bad"}` }, `${passed}/${r.tests.length} tests`) : null);
     fill(els.body, el("pre", { class: "resp-body" }, r.isJson ? prettyJson(r.body) : r.body || "(empty body)"));

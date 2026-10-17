@@ -17,13 +17,14 @@ export async function runSecurity(request, { variables = {}, otherToken, urlGuar
   const label = `${request.method} ${request.url}`;
   if (!baseline.ok) return { request: label, error: baseline.error, baselineStatus: null, probes: [], summary: { pass: 0, fail: 0, warn: 0, skip: 0 } };
 
-  const ctx = { vars: variables, baseline, request, otherToken: otherToken || variables.otherToken };
+  const ctx = { vars: variables, baseline, request, otherToken: otherToken || variables.otherToken, expiredToken: variables.expiredToken };
   const probes = [], bodies = [String(baseline.body || "")];
   for (const probe of PROBES) {
     if (!probe.applies(request, ctx)) { probes.push({ id: probe.id, title: probe.title, status: "skip", detail: probe.skipDetail || "Not applicable to this request." }); continue; }
     const changed = probe.make(request, ctx);
     const res = changed ? await runRequest({ ...changed, tests: [], extract: [] }, opts) : baseline;
     if (changed && res.body) bodies.push(String(res.body));
+    if (changed && probe.repeat > 1) ctx.second = await runRequest({ ...changed, tests: [], extract: [] }, opts);   // e.g. a retry with the same key
     probes.push({ id: probe.id, title: probe.title, ...probe.judge(res, ctx), sent: changed ? res.status ?? res.error : "baseline response" });
   }
   const leaks = findLeaks(bodies);

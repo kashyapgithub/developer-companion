@@ -6,6 +6,7 @@
  * `fetchImpl` is injectable so tests (and anything offline) don't need a network.
  */
 
+import { readQueries, queryAdvice } from "./query-count.js";
 import { buildRequest } from "./build-request.js";
 import { runAssertions } from "./assertions.js";
 import { getPath } from "./json-path.js";
@@ -68,11 +69,13 @@ export async function runRequest(req, opts = {}) {
     const durationMs = Math.round(performance.now() - started);
     const headers = headersToObject(res.headers);
     const json = tryJson(text);
-    const response = { status: res.status, headers, bodyText: text, json, durationMs };
+    const queries = readQueries(headers);
+    const response = { status: res.status, headers, bodyText: text, json, durationMs, queries };
     const tests = runAssertions(req.tests, response);
     return {
       ...base, ok: true, finalUrl: res.url || built.url, status: res.status, statusText: res.statusText, durationMs, size, truncated,
       headers, body: text.length > DEFAULTS.maxShownChars ? text.slice(0, DEFAULTS.maxShownChars) : text, isJson: json !== undefined,
+      ...(queries ? { queries, queryAdvice: queryAdvice(queries, json) } : {}),
       tests, testsPassed: tests.every((t) => t.pass), extracted: extractValues(req.extract, response),
       sent: { headers: built.headers, body: built.body },
     };

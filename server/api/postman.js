@@ -3,11 +3,13 @@
  *
  * What comes across: folders (flattened into a "Folder / Sub" label), method, URL, query params,
  * headers, bodies (raw json/text, urlencoded), bearer/basic/api-key auth, and {{variables}}.
- * What can't: Postman scripts (pre-request and test scripts are JavaScript). They are counted
- * and reported so nothing disappears silently; declarative Tests can be re-added in the UI.
+ * Postman scripts are JavaScript and are never run. The common patterns (status / JSON field / header / time
+ * checks, and pm.environment.set from the response) are translated into Tests and Extract rules
+ * (postman-scripts.js); any other script lines are counted and reported so nothing disappears silently.
  */
 
 import crypto from "node:crypto";
+import { convertScript } from "./postman-scripts.js";
 
 const newId = () => crypto.randomBytes(6).toString("hex");
 
@@ -40,6 +42,21 @@ function convertUrl(url) {
   return { url: query.length ? raw.split("?")[0] : raw, params: query };
 }
 
+/** Test scripts (and the pre-request ones, for variables) -> tests and extract rules; counts what is left over. */
+function convertEvents(events = [], notes) {
+  const tests = [], extract = [];
+  for (const e of events) {
+    const lines = e.script?.exec || [];
+    if (!lines.some((l) => String(l).trim())) continue;
+    if (e.listen === "prerequest") { notes.scripts++; notes.preRequestScripts++; continue; }   // runs before sending: can't be expressed declaratively
+    const c = convertScript(lines);
+    tests.push(...c.tests); extract.push(...c.extract);
+    notes.testsConverted += c.tests.length; notes.extractsConverted += c.extract.length;
+    if (c.ignored.length) { notes.scripts++; notes.ignoredLines.push(...c.ignored.slice(0, 2)); }
+  }
+  return { tests, extract };
+}
+
 /** Walks the item tree, producing flat requests and counting what couldn't be converted. */
 function walk(items, folder, out, notes) {
   for (const item of items || []) {
@@ -49,22 +66,22 @@ function walk(items, folder, out, notes) {
     const { url, params } = convertUrl(r.url);
     const body = convertBody(r.body);
     if (body.unsupported) notes.unsupportedBodies++;
-    if ((item.event || []).some((e) => e.script?.exec?.some((l) => String(l).trim()))) notes.scripts++;
+    const scripted = convertEvents(item.event, notes);
     out.push({
       id: newId(), name: item.name || `${r.method} ${url}`, folder: folder || "", method: String(r.method || "GET").toUpperCase(), url, params,
-      headers: rows(r.header), auth: convertAuth(r.auth), body: body.unsupported ? { mode: "none" } : body, tests: [], extract: [],
+      headers: rows(r.header), auth: convertAuth(r.auth), body: body.unsupported ? { mode: "none" } : body, tests: scripted.tests, extract: scripted.extract,
     });
   }
 }
 
-/** @returns {{collection:{id,name,variables,requests}, notes:{requests:number, scripts:number, unsupportedBodies:number}}} */
+/** @returns {{collection:{id,name,variables,requests}, notes:{requests, scripts (with lines left over), preRequestScripts, testsConverted, extractsConverted, unsupportedBodies, ignoredLines}}} */
 export function importPostmanCollection(json) {
   if (!json?.info || !Array.isArray(json.item)) throw new Error("That doesn't look like a Postman collection (v2.1 JSON export).");
-  const notes = { scripts: 0, unsupportedBodies: 0 };
+  const notes = { scripts: 0, preRequestScripts: 0, testsConverted: 0, extractsConverted: 0, unsupportedBodies: 0, ignoredLines: [] };
   const requests = [];
   walk(json.item, "", requests, notes);
   const variables = Object.fromEntries((json.variable || []).filter((v) => v.key).map((v) => [v.key, String(v.value ?? "")]));
-  return { collection: { id: newId(), name: json.info.name || "Imported collection", variables, requests }, notes: { requests: requests.length, ...notes } };
+  return { collection: { id: newId(), name: json.info.name || "Imported collection", variables, requests }, notes: { requests: requests.length, ...notes, ignoredLines: notes.ignoredLines.slice(0, 5) } };
 }
 
 /** @returns {{id,name,variables}} */

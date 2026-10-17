@@ -31,7 +31,7 @@ export function agentView(r) {
 
 const rowSchema = z.array(z.object({ key: z.string(), value: z.string(), enabled: z.boolean().optional() }));
 const testSchema = z.array(z.object({
-  type: z.enum(["status", "header", "json", "body", "time"]), op: z.string().optional(), value: z.any().optional(), path: z.string().optional(), name: z.string().optional(),
+  type: z.enum(["status", "header", "json", "body", "time", "queries"]), op: z.string().optional(), value: z.any().optional(), path: z.string().optional(), name: z.string().optional(),
 }));
 
 export function registerApiTools(server) {

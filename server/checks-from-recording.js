@@ -12,7 +12,7 @@ import { toScenarioText } from "../lib/agent-tools/checks-spec.js";
 const pathOf = (url) => { try { const u = new URL(url); return u.pathname + u.search; } catch { return url; } };
 
 /** Rows (oldest first) -> { checks, scenario, notes }. */
-export function checksFromRecording(rows, { name = "Recorded flow" } = {}) {
+export function checksFromRecording(rows, { name = "Recorded flow", suggestions = [] } = {}) {
   const steps = [], notes = [];
   let pendingUrl = null;           // a navigation that came right after a click becomes an expectation
 
@@ -40,8 +40,13 @@ export function checksFromRecording(rows, { name = "Recorded flow" } = {}) {
   const failed = rows.filter((r) => (r.tags || []).includes?.("network") && (r.tags || []).includes?.("failed")).length;
   if (failed) notes.push(`${failed} network request(s) failed during the recording; add 'POST /api/… returned 2xx'-style steps for the calls that matter.`);
 
+  // Outcomes come from what the page shows now (the end of the flow): messages first, then headings. A page title is only a fallback.
+  const seen = suggestions.filter((x) => x.kind !== "title").slice(0, 3);
+  for (const x of seen.length ? seen : suggestions.slice(0, 1)) steps.push({ expect: "text", text: x.text });
   steps.push({ expect: "no_console_errors" });
-  notes.push("Add 'I see \"…\"' steps for what the user should end up seeing: the recording captures actions, not outcomes.");
+  notes.push(suggestions.length
+    ? "The 'I see' lines come from what the page shows right now. Check they describe the RESULT you want, not just the screen you ended on."
+    : "Add 'I see \"…\"' steps for what the user should end up seeing: the recording captures actions, not outcomes.");
   const checks = [{ name, steps }];
   return { checks, scenario: toScenarioText(checks), notes: [...new Set(notes)] };
 }

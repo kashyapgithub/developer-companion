@@ -70,6 +70,7 @@ await client.callTool({ name: "interact_with_page", arguments: { action: "click"
 await client.callTool({ name: "stop_recording", arguments: {} }); await wait(800);
 const draft = (await client.callTool({ name: "checks_from_recording", arguments: {} })).content[0].text;
 t("a recording becomes a draft scenario", /Given I open \/shop/.test(draft) && /I click/.test(draft) && /no console errors/.test(draft), draft.slice(0, 200));
+t("the draft expects what the page shows now (the error message)", /I see "Wrong email"/.test(draft) && /come from what the page shows/.test(draft), draft);
 
 await browser.close(); await client.close();
 for (const [c, n] of out) console.log((c ? "PASS " : "FAIL ") + n);
