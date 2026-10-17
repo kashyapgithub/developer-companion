@@ -5,8 +5,8 @@
  * behave the same. `guard` (optional) refuses URLs — pass makeAgentGuard() for the agent.
  */
 
-import { changesData } from "./safety.js";
 import * as store from "./store.js";
+import { changesData } from "./safety.js";
 import { runRequest } from "./runner.js";
 import { buildRequest } from "./build-request.js";
 import { toCurl } from "./curl.js";
@@ -72,7 +72,7 @@ export async function securityCheckCollection(collectionRef, { otherToken, guard
   if (!col) throw new Error(`No collection "${collectionRef}".`);
   const results = [], skipped = [];
   for (const request of col.requests.slice(0, 25)) {
-    if (readOnlyOnly && changesData(request)) { skipped.push(`${request.method} ${request.name}`); continue; }   // agent without the user's go-ahead
+    if (readOnlyOnly && changesData(request)) { skipped.push(`${request.method} ${request.name}`); continue; }   // the agent has no go-ahead from the user
     results.push(await securityCheck(request, { collectionId: col.id, otherToken, guard, fetchImpl }));
   }
   return { collection: col.name, results, skipped };
