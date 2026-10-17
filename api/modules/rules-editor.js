@@ -31,7 +31,7 @@ export function createTestsEditor(container, { onChange }) {
     const target = t.type === "json" ? el("input", { class: "rule-target", value: t.path || "", placeholder: "data.items[0].id", spellcheck: "false", oninput: (e) => { t.path = e.target.value; onChange(); } })
       : t.type === "header" ? el("input", { class: "rule-target", value: t.name || "", placeholder: "header name", spellcheck: "false", oninput: (e) => { t.name = e.target.value; onChange(); } })
       : null;
-    const value = NEEDS_VALUE(t.op) ? el("input", { class: "rule-value", value: t.value ?? "", placeholder: t.op === "type" ? "array, object, string…" : "value", spellcheck: "false", oninput: (e) => { t.value = coerce(e.target.value); onChange(); } }) : null;
+    const value = NEEDS_VALUE(t.op) ? el("input", { class: "rule-value", value: t.value ?? "", placeholder: t.op === "type" ? "array, object, string…" : "value", spellcheck: "false", onfocus: (e) => e.target.select(), oninput: (e) => { t.value = coerce(e.target.value); onChange(); } }) : null;
     return el("div", { class: "rule-row" },
       select(TYPES, t.type, (v) => { Object.assign(t, { type: v }, DEFAULTS[v]); render(); onChange(); }),
       target,
