@@ -51,6 +51,7 @@ import { handleApiClient } from "./api/routes.js";
 import { registerApiTools } from "./api/tools.js";
 import { handleFlow, registerFlowTool } from "./flow.js";
 import { handleMotion, registerMotionTool } from "./motion.js";
+import { getCrossOsResults } from "./cross-os.js";
 
 const PORT = Number(process.env.PORT) || Number(process.env.LOG_SERVER_PORT) || 5959;
 const MAX_BODY_BYTES = 60 * 1024 * 1024; // 60MB for large PNG wireframes
@@ -738,6 +739,63 @@ function startMcpServer() {
             text: JSON.stringify(stats, null, 2),
           },
         ],
+      };
+    }
+  );
+
+  // Tool 6: get_cross_os_results
+  // Reads screenshots committed by the Cross-OS Test workflow onto the
+  // target repo's `results` branch (results/<run_tag>/<os>-<browser>.png).
+  // The GitHub flow lives in cross-os.js with an injectable fetch. Credentials
+  // come from ~/.developer-companion/config.json (githubToken / crossOsOwner /
+  // crossOsRepo); public repos work without a token. Arguments override
+  // config when provided.
+  const fetchCrossOsResultsForServer = async ({ owner, repo, runTag }) => {
+    const selected = await getCrossOsResults({
+      fetchImpl: globalThis.fetch,
+      token: config.githubToken || "",
+      owner,
+      repo,
+      runTag,
+    });
+
+    if (!selected.result) return selected.error;
+    return JSON.stringify(selected.result, null, 2);
+  };
+
+  server.tool(
+    "get_cross_os_results",
+    "Lists cross-OS/browser screenshot results committed to the target repository's 'results' " +
+      "branch by the Cross-OS Test workflow (Windows, macOS, Linux × Chrome, Firefox, WebKit). " +
+      "Use this when the user asks about cross-platform or cross-browser rendering checks, or " +
+      "wants the latest screenshots of their page on real operating systems.",
+    {
+      owner: z.string().optional().describe("GitHub repo owner (defaults to configured crossOsOwner)"),
+      repo: z.string().optional().describe("GitHub repo name (defaults to configured crossOsRepo)"),
+      run_tag: z.string().optional().describe("Specific run tag (e.g. 'run-1712345678901'); defaults to the newest run"),
+    },
+    async ({ owner, repo, run_tag }) => {
+      const finalOwner = owner || config.crossOsOwner;
+      const finalRepo = repo || config.crossOsRepo;
+
+      if (!finalOwner || !finalRepo) {
+        return {
+          content: [
+            {
+              type: "text",
+              text:
+                "Cross-OS results are not configured on this machine. Add this to " +
+                "~/.developer-companion/config.json and restart the server:\n" +
+                '{ "crossOsOwner": "your-username", "crossOsRepo": "your-test-repo", "githubToken": "ghp_..." }\n' +
+                "(githubToken is only needed for private repositories; public works without it.)",
+            },
+          ],
+        };
+      }
+
+      const text = await fetchCrossOsResultsForServer({ owner: finalOwner, repo: finalRepo, runTag: run_tag });
+      return {
+        content: [{ type: "text", text }],
       };
     }
   );

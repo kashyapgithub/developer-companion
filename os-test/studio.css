@@ -1,0 +1,562 @@
+/* -----------------------------------------------------------------------
+   studio.css
+   Ported from the standalone cross-os tester popup, adapted for a full
+   page opened in its own window by Developer Companion. The "QA lab"
+   token system and OS dot colors are kept — colors on the OS dots are
+   functional labels, not decoration.
+   ----------------------------------------------------------------------- */
+
+:root {
+  --bg: #14151a;
+  --panel: #1d1f26;
+  --border: #2c2f38;
+  --text: #edeef2;
+  --text-muted: #8b8fa3;
+  --accent: #6fe3c4;
+  --accent-dim: #3f8b78;
+  --danger: #e2725b;
+
+  --os-windows: #4fc3f7;
+  --os-macos: #c9cdd6;
+  --os-linux: #f2a65a;
+
+  --font-label: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+  --font-body: -apple-system, "Inter", "Segoe UI", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+}
+
+.studio {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 1.5rem 2rem 2.5rem;
+}
+
+/* ---------- header ---------- */
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.app-header__mark {
+  font-family: var(--font-label);
+  font-size: 0.8rem;
+  letter-spacing: 0.02em;
+  color: var(--accent);
+}
+
+.app-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.icon-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  cursor: pointer;
+  padding: 0.2rem;
+  line-height: 1;
+}
+
+.icon-btn:hover {
+  color: var(--text);
+}
+
+/* ---------- setup banner ---------- */
+
+.setup-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(111, 227, 196, 0.1);
+  border: 1px solid var(--accent-dim);
+  border-radius: 0.4rem;
+  padding: 0.45rem 0.65rem;
+  margin-bottom: 0.65rem;
+  font-size: 0.72rem;
+  color: var(--accent);
+}
+
+.setup-banner[hidden] {
+  display: none;
+}
+
+.setup-banner button {
+  background: var(--accent);
+  color: #0b1512;
+  border: none;
+  border-radius: 0.25rem;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.setup-banner button:hover {
+  background: #86ebd1;
+}
+
+/* ---------- mode selector (live webpage vs github repo) ---------- */
+
+.mode-selector {
+  display: flex;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 0.45rem;
+  padding: 0.18rem;
+  gap: 0.2rem;
+  margin-bottom: 0.65rem;
+}
+
+.mode-btn {
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 500;
+  padding: 0.35rem 0.4rem;
+  border-radius: 0.35rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.mode-btn:hover {
+  color: var(--text);
+}
+
+.mode-btn.is-active {
+  background: rgba(111, 227, 196, 0.12);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.mode-panel {
+  margin-bottom: 0.65rem;
+}
+
+.mode-panel[hidden] {
+  display: none;
+}
+
+.target-url {
+  font-family: var(--font-label);
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin: 0;
+  word-break: break-all;
+  line-height: 1.4;
+}
+
+.repo-target-box {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 0.4rem;
+  padding: 0.35rem 0.5rem;
+}
+
+.repo-target-label {
+  font-family: var(--font-label);
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.repo-path-input {
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-family: var(--font-label);
+  font-size: 0.72rem;
+  outline: none;
+  padding: 0;
+}
+
+.repo-path-input::placeholder {
+  color: #55596b;
+}
+
+.capture-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  margin-bottom: 0.7rem;
+  user-select: none;
+}
+
+.capture-toggle input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.capture-toggle__track {
+  width: 2rem;
+  height: 1.1rem;
+  border-radius: 999px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  position: relative;
+  flex-shrink: 0;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.capture-toggle__thumb {
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 50%;
+  background: var(--text-muted);
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.capture-toggle input:checked + .capture-toggle__track {
+  background: var(--accent-dim);
+  border-color: var(--accent-dim);
+}
+
+.capture-toggle input:checked + .capture-toggle__track .capture-toggle__thumb {
+  transform: translateX(0.9rem);
+  background: var(--accent);
+}
+
+.capture-toggle__label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* ---------- browser selection pills ---------- */
+
+.browser-toggles {
+  display: flex;
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
+}
+
+.browser-pill {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.35rem 0.45rem;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 0.35rem;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.15s ease;
+}
+
+.browser-pill input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.browser-pill__label {
+  font-size: 0.7rem;
+  font-family: var(--font-label);
+  color: var(--text-muted);
+  transition: color 0.15s ease;
+  white-space: nowrap;
+}
+
+.browser-pill:has(input:checked) {
+  border-color: var(--accent-dim);
+  background: rgba(111, 227, 196, 0.08);
+}
+
+.browser-pill:has(input:checked) .browser-pill__label {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.run-button {
+  width: 100%;
+  padding: 0.7rem;
+  border: 1px solid var(--accent-dim);
+  border-radius: 0.4rem;
+  background: var(--accent);
+  color: #0b1512;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: transform 0.1s ease, background 0.15s ease;
+}
+
+.run-button:hover {
+  background: #86ebd1;
+}
+
+.run-button:active {
+  transform: scale(0.98);
+}
+
+.run-button:disabled {
+  background: var(--panel);
+  border-color: var(--border);
+  color: var(--text-muted);
+  cursor: not-allowed;
+  transform: none;
+}
+
+.status-line {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  min-height: 1rem;
+  margin: 0.5rem 0 0.25rem;
+}
+
+.status-line[data-tone="error"] {
+  color: var(--danger);
+}
+
+/* ---------- bench (the OS test slots) ---------- */
+
+.bench {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 0.75rem;
+}
+
+.bench__slot {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 0.65rem;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  transition: border-color 0.2s ease;
+}
+
+.bench__slot[data-active="true"] {
+  border-color: var(--accent-dim);
+}
+
+.bench__dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.bench__dot--windows {
+  background: var(--os-windows);
+}
+
+.bench__dot--macos {
+  background: var(--os-macos);
+}
+
+.bench__dot--linux {
+  background: var(--os-linux);
+}
+
+.bench__info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.bench__label {
+  font-family: var(--font-label);
+  font-size: 0.75rem;
+}
+
+.bench__state {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-top: 0.1rem;
+}
+
+.bench__state[data-state="running"] {
+  color: var(--accent);
+  animation: pulse-text 1.4s ease-in-out infinite;
+}
+
+.bench__state[data-state="done"] {
+  color: var(--accent);
+}
+
+.bench__state[data-state="error"] {
+  color: var(--danger);
+}
+
+@keyframes pulse-text {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+
+.bench__thumb {
+  height: 4.5rem;
+  width: 7.5rem;
+  object-fit: cover;
+  border-radius: 0.3rem;
+  border: 1px solid var(--border);
+  cursor: zoom-in;
+  transition: height 0.2s ease, width 0.2s ease;
+  flex-shrink: 0;
+}
+
+.bench__thumb[data-expanded="true"] {
+  width: 100%;
+  height: 16rem;
+  object-fit: contain;
+  cursor: zoom-out;
+}
+
+/* When one thumb expands, stack it under its row's info instead of beside it */
+.bench__slot:has(.bench__thumb[data-expanded="true"]) {
+  flex-wrap: wrap;
+}
+
+/* ---------- bench header & expand toggle ---------- */
+
+.bench-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0.75rem 0 0.35rem;
+  padding: 0 0.1rem;
+}
+
+.bench-header__title {
+  font-family: var(--font-label);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.text-btn {
+  background: none;
+  border: none;
+  padding: 0.2rem 0.45rem;
+  font-family: var(--font-label);
+  font-size: 0.68rem;
+  color: var(--accent);
+  cursor: pointer;
+  border-radius: 0.25rem;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.text-btn:hover {
+  background: rgba(111, 227, 196, 0.12);
+}
+
+/* ---------- fullscreen lightbox modal ---------- */
+
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  box-sizing: border-box;
+}
+
+.lightbox[hidden] {
+  display: none;
+}
+
+.lightbox__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 11, 15, 0.88);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.lightbox__dialog {
+  position: relative;
+  z-index: 1;
+  max-width: 95vw;
+  max-height: 95vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 0.6rem;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+}
+
+.lightbox__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 0.9rem;
+  background: rgba(20, 21, 26, 0.95);
+  border-bottom: 1px solid var(--border);
+}
+
+.lightbox__title {
+  font-family: var(--font-label);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.lightbox__close {
+  font-size: 1.1rem;
+  padding: 0.15rem 0.4rem;
+  border-radius: 0.25rem;
+}
+
+.lightbox__close:hover {
+  background: rgba(226, 114, 91, 0.18);
+  color: var(--danger);
+}
+
+.lightbox__body {
+  padding: 0.5rem;
+  overflow: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #090a0d;
+  max-height: calc(95vh - 3.5rem);
+}
+
+.lightbox__img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 0.25rem;
+}

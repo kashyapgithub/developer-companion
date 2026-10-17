@@ -1,0 +1,12 @@
+{
+  "name": "cross-os-tester",
+  "private": true,
+  "description": "Playwright capture script run by the cross-OS screenshot workflow.",
+  "scripts": {
+    "capture": "node scripts/capture.js",
+    "test": "node --test tests/background.test.js tests/popup.test.js tests/options.test.js"
+  },
+  "dependencies": {
+    "playwright": "1.63.0"
+  }
+}

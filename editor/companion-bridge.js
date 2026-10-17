@@ -10,6 +10,7 @@
 
 export function initCompanionBridge() {
   const githubBtn = document.getElementById("github-dashboard-btn");
+  const crossOsBtn = document.getElementById("cross-os-test-btn");
   const sendLogsBtn = document.getElementById("send-logs-btn");
   const viewLogsBtn = document.getElementById("view-logs-btn");
   const logsBadge = document.getElementById("logs-badge");
@@ -71,6 +72,26 @@ export function initCompanionBridge() {
     closeGithubModal();
     chrome.runtime?.sendMessage?.({ type: "OPEN_GITHUB_DASHBOARD" });
   });
+
+  // --- Cross-OS Test Studio Button ------------------------------------------
+  async function openCrossOsStudio() {
+    if (!chrome.runtime?.sendMessage) {
+      showToast("Chrome extension runtime unavailable", "error");
+      return;
+    }
+    try {
+      const res = await chrome.runtime.sendMessage({ type: "OPEN_CROSS_OS_TESTER" });
+      if (res?.ok) {
+        showToast("Cross-OS Test Studio opened in a new window", "success");
+      } else {
+        showToast("Could not open the Cross-OS Test Studio", "error");
+      }
+    } catch (err) {
+      showToast(`Error opening Cross-OS Test Studio: ${err.message}`, "error");
+    }
+  }
+
+  crossOsBtn?.addEventListener("click", openCrossOsStudio);
 
   // --- Send Logs to Agent Button ------------------------------------------
   async function sendLogsToAgent() {

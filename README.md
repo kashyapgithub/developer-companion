@@ -11,6 +11,9 @@ Terminal agents like Claude Code, Cursor and Antigravity are great at code and b
 - **Compare design and reality.** Lay your sketch over the live page, semi-transparent.
 - **Show the bug.** Record a session while you test: console errors, failed requests, your clicks and page changes, and screenshots at the moments that matter. One click sends it all to the agent.
 - **Let the agent look and test.** Your agent can screenshot your running app, and even record a session while it clicks through to reproduce a bug on its own.
+- **Test on real OSes.** Point the Cross-OS tester at any page (or a repo file) and free GitHub Actions
+  runners screenshot it on real Windows, macOS and Linux with Chrome, Firefox and WebKit/Safari;
+  your agent reads the screenshots through one MCP call (`get_cross_os_results`).
 - **Keep your repos in reach.** Your GitHub repositories, tagged and summarized, are available to the agent as context.
 - **Float over any tab.** Pop the editor over whatever page you are testing, move it, minimize it, keep drawing.
 - **One-click setup.** The installer connects Claude Code, Cursor, opencode and Antigravity for you, and works for agents in a VM too.
@@ -24,11 +27,18 @@ Everything runs on your machine. Nothing goes to a cloud service.
 ```
    Chrome extension                      Local bridge                   Your agent
 ┌──────────────────────┐          ┌─────────────────────┐        ┌───────────────────┐
-│ Canvas · Hover mode  │  HTTP    │ localhost:5959      │  MCP   │ Claude Code       │
-│ Repos  · Browser logs│ ───────▶ │ Node.js + SQLite    │ ─────▶ │ Cursor            │
+│ Canvas·Hover·Cross-O/S  │  HTTP    │ localhost:5959      │  MCP   │ Claude Code       │
+│ Repos·Logs·Cross-OS│ ───────▶ │ Node.js + SQLite    │ ─────▶ │ Cursor            │
 └──────────────────────┘          └─────────────────────┘        │ Antigravity …     │
                                                                  └───────────────────┘
+
+> **Cross-OS extra path:** the Cross-OS studio dispatches the `cross-os-test` GitHub Action on the
+> target repo; runners commit screenshots to the repo's `results` branch and `get_cross_os_results`
+> hands them to your agent. The tester promises exactly what it tests: real Windows · macOS · Linux,
+> real Chrome · Firefox · WebKit/Safari, free hosted runners only.
+
 ```
+The extension saves sketches, logs and your repo list to a small server on your computer.```
 
 The extension saves sketches, logs and your repo list to a small server on your computer. That same server speaks the Model Context Protocol (MCP), so your agent can ask for them with a tool call.
 
@@ -45,6 +55,22 @@ The extension saves sketches, logs and your repo list to a small server on your 
 
 You need [Node.js 22+](https://nodejs.org). Then:
 
+### Step 2b: One-time setup for the Cross-OS Website Tester
+
+The tester drives **GitHub's free cloud runners**. Point it at a repository that holds the test workflow:
+
+1. In the repo you want to test from (e.g. [`website-cross-operating-system-testing`](https://github.com/kashyapgithub/website-cross-operating-system-testing)), make sure `.github/workflows/screenshot-test.yml`, `scripts/`, and `package.json` exist — identical templates are bundled in the extension under `os-test/workflow-assets/`.
+2. Create an empty `results` branch in that repo: `git checkout --orphan results && git rm -rf . && git commit --allow-empty -m init && git push origin results && git checkout main`.
+3. In the canvas toolbar, click **Cross-OS Test** → **⚙ settings** → save your GitHub token (or leave empty to reuse the GitHub Dashboard token), and the target repo's **owner + name**.
+
+> Public repos run unlimited & free. Private repos: 2,000 free Actions minutes/month (macOS consumes 10×, Windows 2×, Linux 1×). GitHub never charges without an explicit paid limit.
+
+---
+
+### Step 3: Connect to Your AI Coding Agent
+
+#### Option A: Claude Code
+Run this command in your terminal:
 ```bash
 git clone https://github.com/kashyapgithub/developer-companion
 cd developer-companion/server
@@ -97,6 +123,57 @@ For the JSON-style configs, add:
 ```
 Use the **full absolute path**; `~` and relative paths are the most common reason an agent says "server failed to start".
 
+---
+
+## How to Use the 4 Tools
+
+### 1. UI Sketch Canvas (Main UI)
+- **Click the extension icon** in Chrome -> The canvas opens in a full tab.
+- Pick shapes, boxes, buttons, text, and connectors from the floating bottom dock.
+- **Add screenshot:** Use the "Add screenshot" toolbar button, press `Ctrl/Cmd+Shift+K`, or paste (`Ctrl/Cmd+V`) anywhere to place screenshots from clipboard, file upload, or browser screen capture.
+- **Figma-style layers panel:** Drag-and-drop layers to reorder above, below, or inside frames; collapse containers with arrows; multi-select with Shift+click; rename with F2; right-click any layer or canvas shape for arrange, group, and delete options.
+- **Delete shapes:** Use the Delete button in the toolbar, layer trash icon, right-click menu, or Delete / Backspace key.
+- When your sketch is ready, click **"Send to project"** in the top toolbar.
+- Your AI agent can now run `get_latest_sketch` to inspect your design and generate the matching frontend code.
+
+### 2. GitHub Repo Dashboard
+- Inside the canvas, click the **"GitHub Dashboard"** button in the top toolbar.
+- A clean modal pops up showing all your public, private, and forked repos.
+- Filter by language, search by keyword, view commit history, or let AI generate repo summaries.
+- Clicking **"Pop out"** opens the dashboard in its own standalone floating window.
+- The repo catalog is automatically shared with your local agent.
+
+### 3. Send Browser Logs to Agent
+- Whenever you test your web app on `localhost`:
+  - The extension automatically monitors console logs, uncaught exceptions, and failed 4xx/5xx network calls.
+- Just click **"Send browser logs to agent"** on the toolbar.
+- An instant toast confirms: `Sent 14 logs to Agent Server`.
+- Your agent can now run `get_browser_logs` to immediately find the bug and write the fix.
+- Want to view the logs yourself? Click the icon next to the button to open the **Live Logs Drawer**.
+
+### 4. Cross-OS Website Tester
+- Open the page you want to test in any browser tab, then click **"Cross-OS Test"** in the canvas toolbar.
+- A pop-out **Test Studio** window opens with your page URL auto-filled.
+- Test either a **🌐 Live Webpage** or a **📁 GitHub Repo** file (no deployment needed), pick **Chrome / Firefox / Safari-WebKit**, then hit **Run test**.
+- Real **Windows, macOS, and Linux** GitHub runners capture screenshots in parallel and stream into the window as each finishes:
+  - **Expand all** shows all 9 combos side by side; click any shot for the full-resolution lightbox.
+- Your agent can run `get_cross_os_results` to pull the latest screenshot links from the `results` branch.
+
+---
+
+## MCP Tools Reference (What Your Agent Can Do)
+
+Your AI agent automatically gets access to these 6 tools:
+
+| MCP Tool | What the Agent Can Ask For |
+| :--- | :--- |
+| `get_latest_sketch` | "Show me the UI sketch the user just drew on canvas." |
+| `get_browser_logs` | "Get recent JavaScript errors and failed network calls from localhost." |
+| `get_github_repos` | "List the user's GitHub repositories and their AI descriptions." |
+| `send_browser_command` | "Tell the browser to reload or capture local storage." |
+| `get_companion_status` | "Check if the server is healthy and how many logs are stored." |
+| `get_cross_os_results` | "Show me how my page renders on Windows, macOS, and Linux." |
+
 #### Not working?
 | You see | Do this |
 | :--- | :--- |
@@ -117,7 +194,6 @@ npm run lan -- on
 It prints an address, a port and an **access code** (like `K7QD-4MXR`). In the extension, open the gear next to **Send via** (Agent connection), choose *In a VM or another computer*, type the address, port and code, and press **Test** (the dot turns green). Remote callers must present the code; the same computer never needs it. Wrong code? The editor says so and nothing is sent. `npm run lan -- off` goes back to this-computer-only.
 
 Your agent still connects to the bridge with the steps above, on the machine it runs on.
-
 ---
 
 ## Using it
@@ -351,12 +427,23 @@ node server/query_logs.js groups
 | `logs/` | The log viewer and settings page. |
 | `lib/` | Extension background modules (log capture, allowlist, commands, hover manager). `lib/agent-tools/` holds one small file per agent browser tool (network, tokens, audit, mocks…). |
 | `api/` | The API client window (request editor, collections, environments, import). Its engine is in `server/api/`. |
+| `server/cross-os.js` | GitHub dispatch/poll for the Cross-OS tester (injectable fetch, reusable by tests). |
 | `server/` | The local bridge and MCP server, plus the installer, agent-connect and LAN tools. |
 | `video/` | The Video review window: recording, pause, notes, drawing on frames. |
 | `picker/`, `xray/`, `sketch-overlay/` | Scripts injected into a page for element picking, X-ray mode and the sketch overlay. |
+| `os-test/` | The Cross-OS Website Tester pop-out: studio UI, settings UI, and the exact workflow files you copy into a target repo. |
+| `tests/` | The 30-layer behavioral suite (`node --test`) — from syntax/CSP to runtime user flows to a guarded full-suite green check. |
 | `test/` | Tests: `node/` (fast) and `browser/` (real Chromium with the real extension). |
 | `background.js` | The extension's service worker. |
 
+**Q: Do I need to start multiple servers?**  
+No. Everything uses a single port (`5959`). Both sketches and browser logs talk to this single endpoint. (The Cross-OS Tester is even more serverless — it runs entirely on GitHub's cloud.)
+
+**Q: Does the Cross-OS Tester need its own GitHub token?**  
+Only if you never set one for the GitHub Dashboard — the tester reuses the Dashboard token automatically. You always need to enter the target repo's **owner and name** in Cross-OS **⚙ settings**, since that's where the test workflow and `results` branch live.
+
+**Q: Where are cross-OS screenshots stored?**  
+On your GitHub repo's `results` branch (`results/<run-tag>/<os>-<browser>.png`). Nothing ever touches your local SQLite DB, and nothing goes to a third party.
 ---
 
 ## Development

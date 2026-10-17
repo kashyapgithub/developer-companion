@@ -34,10 +34,14 @@ export function readConfig() {
     return {
       lan: !!c.lan,
       token: typeof c.token === "string" ? c.token : "",
-      port: Number(c.port) || 5959
+      port: Number(c.port) || 5959,
+      // Cross-OS tester credentials for the get_cross_os_results MCP tool
+      githubToken: typeof c.githubToken === "string" ? c.githubToken : "",
+      crossOsOwner: typeof c.crossOsOwner === "string" ? c.crossOsOwner : "",
+      crossOsRepo: typeof c.crossOsRepo === "string" ? c.crossOsRepo : "",
     };
   } catch {
-    return { lan: false, token: "", port: 5959 };
+    return { lan: false, token: "", port: 5959, githubToken: "", crossOsOwner: "", crossOsRepo: "" };
   }
 }
 

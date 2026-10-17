@@ -5,7 +5,8 @@
  * 1. UI Sketch Canvas (primary tab interface opened on action click)
  * 2. GitHub Repo Dashboard (managed window or modal)
  * 3. Browser Debug Logger (CDP debugger capturing console, errors, network)
- * 4. Unified messaging & log streaming to the Agent Companion Server
+ * 4. Cross-OS Website Tester (pop-out studio + GitHub Actions bridge)
+ * 5. Unified messaging & log streaming to the Agent Companion Server
  */
 
 import { getAppNameForUrl, setAllowlist, getAllowlist } from "./lib/allowlist.js";
@@ -30,12 +31,13 @@ import { captureForRecording, restoreRecording, startRecording, stopRecording, r
 import { setHoverEnabled, isHoverEnabled, repairHoverRegistration } from "./lib/hover-manager.js";
 import { getForwardConfig, setForwardConfig, DEFAULT_FORWARD_CONFIG } from "./lib/forward-config.js";
 import { initConsoleStream, setStreaming, isStreaming } from "./lib/console-stream.js";
-
 initConsoleStream();   // load the "Stream console to agent" switch
+import { initOsTestBridge } from "./lib/os-test.js";
 
 const CANVAS_URL = chrome.runtime.getURL("editor/editor.html");
 const DASHBOARD_URL = chrome.runtime.getURL("overlay/overlay.html");
 const LOGS_URL = chrome.runtime.getURL("logs/logs.html");
+const CROSS_OS_URL = chrome.runtime.getURL("os-test/studio.html");
 
 // ---------------------------------------------------------------------------
 // 1. Primary Action: Open UI Sketch Canvas in a full tab
@@ -109,6 +111,86 @@ chrome.windows.onRemoved.addListener(async (closedId) => {
     await chrome.storage.session.remove("dashboardWindowId");
   }
 });
+
+// ---------------------------------------------------------------------------
+// 2b. Cross-OS Test Studio Window Management
+// ---------------------------------------------------------------------------
+async function getOpenCrossOsWindowId() {
+  const { crossOsWindowId } = await chrome.storage.session.get("crossOsWindowId");
+  return crossOsWindowId ?? null;
+}
+
+async function setOpenCrossOsWindowId(windowId) {
+  await chrome.storage.session.set({ crossOsWindowId: windowId });
+}
+
+/**
+ * The URL pre-filled in the studio's "Live Webpage" panel: the most
+ * recently used http(s) tab in the browser. Extension pages (canvas,
+ * logs, dashboards) never match the http(s) patterns, so we never
+ * suggest testing our own pages.
+ */
+async function getMostRecentWebTabUrl() {
+  try {
+    const tabs = await chrome.tabs.query({ url: ["http://*/*", "https://*/*"] });
+    if (!tabs || tabs.length === 0) return "";
+    const latest = tabs.reduce((a, b) => ((b.lastAccessed || 0) > (a.lastAccessed || 0) ? b : a));
+    return latest?.url ?? "";
+  } catch {
+    return "";
+  }
+}
+
+async function openOrFocusCrossOsStudio() {
+  const existingId = await getOpenCrossOsWindowId();
+  if (existingId !== null) {
+    try {
+      await chrome.windows.update(existingId, { focused: true });
+      return;
+    } catch {
+      // Window was closed; create new
+    }
+  }
+
+  let targetWidth = 940;
+  let targetHeight = 780;
+  let targetTop = 50;
+  let targetLeft = 90;
+
+  try {
+    const currentWin = await chrome.windows.getCurrent();
+    if (currentWin?.width && currentWin?.height) {
+      targetWidth = Math.min(980, Math.max(720, Math.round(currentWin.width * 0.72)));
+      targetHeight = Math.min(820, Math.max(560, Math.round(currentWin.height * 0.82)));
+      targetLeft = Math.max(20, Math.round((currentWin.width - targetWidth) / 2) + (currentWin.left || 0));
+      targetTop = Math.max(20, Math.round((currentWin.height - targetHeight) / 2) + (currentWin.top || 0));
+    }
+  } catch {}
+
+  const baseUrl = await getMostRecentWebTabUrl();
+  const url = baseUrl ? `${CROSS_OS_URL}?url=${encodeURIComponent(baseUrl)}` : CROSS_OS_URL;
+
+  const created = await chrome.windows.create({
+    url,
+    type: "popup",
+    width: targetWidth,
+    height: targetHeight,
+    top: targetTop,
+    left: targetLeft,
+  });
+
+  await setOpenCrossOsWindowId(created.id);
+}
+
+chrome.windows.onRemoved.addListener(async (closedId) => {
+  const existingId = await getOpenCrossOsWindowId();
+  if (closedId === existingId) {
+    await chrome.storage.session.remove("crossOsWindowId");
+  }
+});
+
+// Cross-OS test dispatch/poll bridge (port name: "cross-os-test")
+initOsTestBridge();
 
 // ---------------------------------------------------------------------------
 // 3. Centralized Debugger Log Capture
@@ -421,6 +503,11 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
   if (message.type === "OPEN_LOGS_VIEWER") {
     chrome.tabs.create({ url: LOGS_URL }).then(() => sendResponse({ ok: true }));
+    return true;
+  }
+
+  if (message.type === "OPEN_CROSS_OS_TESTER") {
+    openOrFocusCrossOsStudio().then(() => sendResponse({ ok: true }));
     return true;
   }
 

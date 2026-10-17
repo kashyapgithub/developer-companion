@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Cross-OS Test Studio — Developer Companion</title>
+  <link rel="stylesheet" href="studio.css" />
+</head>
+<body>
+  <main class="studio">
+    <header class="app-header">
+      <span class="app-header__mark">cross-os · developer companion</span>
+      <div class="app-header__actions">
+        <button id="settings-btn" class="icon-btn" type="button" aria-label="Settings" title="GitHub setup (token, owner, repo)">⚙</button>
+      </div>
+    </header>
+
+    <div id="setup-banner" class="setup-banner" hidden>
+      <span>⚙ GitHub setup required — token, repo owner and repo name</span>
+      <button id="setup-banner-btn" type="button">Configure</button>
+    </div>
+
+    <div class="mode-selector" role="tablist" aria-label="Select Test Target">
+      <button id="mode-url-btn" class="mode-btn is-active" type="button" role="tab" aria-selected="true">
+        🌐 Live Webpage
+      </button>
+      <button id="mode-repo-btn" class="mode-btn" type="button" role="tab" aria-selected="false">
+        📁 GitHub Repo
+      </button>
+    </div>
+
+    <!-- Mode 1: Live Webpage Panel -->
+    <div id="panel-url" class="mode-panel">
+      <p id="current-url" class="target-url"></p>
+    </div>
+
+    <!-- Mode 2: Direct GitHub Repo Panel -->
+    <div id="panel-repo" class="mode-panel" hidden>
+      <div class="repo-target-box">
+        <label for="repo-path-input" class="repo-target-label">File in repo:</label>
+        <input
+          id="repo-path-input"
+          class="repo-path-input"
+          type="text"
+          placeholder="docs/index.html or index.html"
+          value="docs/index.html"
+          spellcheck="false"
+        />
+      </div>
+    </div>
+
+    <label class="capture-toggle" for="fullpage-toggle">
+      <input id="fullpage-toggle" type="checkbox" checked />
+      <span class="capture-toggle__track"><span class="capture-toggle__thumb"></span></span>
+      <span class="capture-toggle__label" id="fullpage-toggle-label">Full page</span>
+    </label>
+
+    <div class="browser-toggles" role="group" aria-label="Select Browsers">
+      <label class="browser-pill">
+        <input id="browser-chromium" type="checkbox" checked />
+        <span class="browser-pill__label">Chrome</span>
+      </label>
+      <label class="browser-pill">
+        <input id="browser-firefox" type="checkbox" checked />
+        <span class="browser-pill__label">Firefox</span>
+      </label>
+      <label class="browser-pill">
+        <input id="browser-webkit" type="checkbox" checked />
+        <span class="browser-pill__label">Safari / WebKit</span>
+      </label>
+    </div>
+
+    <button id="run-btn" class="run-button" type="button">Run test</button>
+
+    <p id="status-line" class="status-line" role="status"></p>
+
+    <div class="bench-header">
+      <span class="bench-header__title">Test Matrix</span>
+      <button id="expand-all-btn" class="text-btn" type="button" aria-label="Expand or collapse all previews">Expand all</button>
+    </div>
+
+    <ul id="bench-list" class="bench">
+      <!-- Windows combos -->
+      <li class="bench__slot" data-combo="windows" data-browser="chromium">
+        <span class="bench__dot bench__dot--windows"></span>
+        <div class="bench__info">
+          <span class="bench__label">Windows · Chrome</span>
+          <span class="bench__state" data-state="idle">Idle</span>
+        </div>
+        <img class="bench__thumb" alt="" hidden />
+      </li>
+      <li class="bench__slot" data-combo="windows-firefox" data-browser="firefox">
+        <span class="bench__dot bench__dot--windows"></span>
+        <div class="bench__info">
+          <span class="bench__label">Windows · Firefox</span>
+          <span class="bench__state" data-state="idle">Idle</span>
+        </div>
+        <img class="bench__thumb" alt="" hidden />
+      </li>
+      <li class="bench__slot" data-combo="windows-webkit" data-browser="webkit">
+        <span class="bench__dot bench__dot--windows"></span>
+        <div class="bench__info">
+          <span class="bench__label">Windows · WebKit</span>
+          <span class="bench__state" data-state="idle">Idle</span>
+        </div>
+        <img class="bench__thumb" alt="" hidden />
+      </li>
+
+      <!-- macOS combos -->
+      <li class="bench__slot" data-combo="macos-webkit" data-browser="webkit">
+        <span class="bench__dot bench__dot--macos"></span>
+        <div class="bench__info">
+          <span class="bench__label">macOS · Safari</span>
+          <span class="bench__state" data-state="idle">Idle</span>
+        </div>
+        <img class="bench__thumb" alt="" hidden />
+      </li>
+      <li class="bench__slot" data-combo="macos" data-browser="chromium">
+        <span class="bench__dot bench__dot--macos"></span>
+        <div class="bench__info">
+          <span class="bench__label">macOS · Chrome</span>
+          <span class="bench__state" data-state="idle">Idle</span>
+        </div>
+        <img class="bench__thumb" alt="" hidden />
+      </li>
+      <li class="bench__slot" data-combo="macos-firefox" data-browser="firefox">
+        <span class="bench__dot bench__dot--macos"></span>
+        <div class="bench__info">
+          <span class="bench__label">macOS · Firefox</span>
+          <span class="bench__state" data-state="idle">Idle</span>
+        </div>
+        <img class="bench__thumb" alt="" hidden />
+      </li>
+
+      <!-- Linux combos -->
+      <li class="bench__slot" data-combo="linux" data-browser="chromium">
+        <span class="bench__dot bench__dot--linux"></span>
+        <div class="bench__info">
+          <span class="bench__label">Linux · Chrome</span>
+          <span class="bench__state" data-state="idle">Idle</span>
+        </div>
+        <img class="bench__thumb" alt="" hidden />
+      </li>
+      <li class="bench__slot" data-combo="linux-firefox" data-browser="firefox">
+        <span class="bench__dot bench__dot--linux"></span>
+        <div class="bench__info">
+          <span class="bench__label">Linux · Firefox</span>
+          <span class="bench__state" data-state="idle">Idle</span>
+        </div>
+        <img class="bench__thumb" alt="" hidden />
+      </li>
+      <li class="bench__slot" data-combo="linux-webkit" data-browser="webkit">
+        <span class="bench__dot bench__dot--linux"></span>
+        <div class="bench__info">
+          <span class="bench__label">Linux · WebKit</span>
+          <span class="bench__state" data-state="idle">Idle</span>
+        </div>
+        <img class="bench__thumb" alt="" hidden />
+      </li>
+    </ul>
+  </main>
+
+  <div id="lightbox-modal" class="lightbox" hidden role="dialog" aria-modal="true" aria-label="Fullscreen screenshot preview">
+    <div class="lightbox__backdrop" id="lightbox-backdrop"></div>
+    <div class="lightbox__dialog">
+      <header class="lightbox__header">
+        <span id="lightbox-title" class="lightbox__title"></span>
+        <button id="lightbox-close" class="icon-btn lightbox__close" type="button" aria-label="Close fullscreen preview">✕</button>
+      </header>
+      <div class="lightbox__body">
+        <img id="lightbox-img" class="lightbox__img" alt="Fullscreen screenshot" />
+      </div>
+    </div>
+  </div>
+
+  <script src="studio.js" type="module"></script>
+</body>
+</html>
