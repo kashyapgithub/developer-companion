@@ -14,6 +14,7 @@
 import { z } from "zod";
 import { pickRequest, buildTrace } from "./trace.js";
 import { saveBaseline, readBaseline, diffPng } from "./visual-diff.js";
+import { registerCheckTools } from "./check-tools.js";
 
 const NO_ANSWER = "The browser didn't answer. Is Chrome open with the Developer Companion extension, and is the app open on an allowed site (localhost by default)?";
 
@@ -35,6 +36,9 @@ export function imageBlock(dataUrl) {
 
 export function registerBrowserTools(server, ctx) {
   const { askBrowser } = ctx;
+
+  // acceptance checks + vitals live in their own files
+  registerCheckTools(server, ctx);
 
   // ---- 1. network inspector ------------------------------------------------------
   server.tool(
