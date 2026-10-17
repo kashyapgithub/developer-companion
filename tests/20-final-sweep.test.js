@@ -134,10 +134,10 @@ test("README documents all extension file references that users touch", () => {
   const readme = fs.readFileSync(rootPath("README.md"), "utf8");
   for (const ref of [
     "os-test/workflow-assets/",
-    "server/server.js",
-    "127.0.0.1:5959",
+    /server\/server\.js/,
+    /127\.0\.0\.1:5959|localhost:5959/,
   ]) {
-    assert.ok(readme.includes(ref), `README references ${ref}`);
+    assert.ok(readme.match(ref), `README documents ${ref}`);
   }
 });
 

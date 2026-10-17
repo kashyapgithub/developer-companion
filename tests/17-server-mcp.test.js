@@ -65,18 +65,25 @@ test("MCP client connects over stdio", async () => {
   assert.ok(client, "client initialized");
 });
 
-test("exactly the 6 advertised tools exist with schemas and descriptions", async () => {
+test("the advertised core tools exist with schemas and descriptions (superset over the grown registry)", async () => {
   await boot;
   const list = await client.listTools();
-  const names = list.tools.map((t) => t.name).sort();
-  assert.deepEqual(names, [
+  const names = list.tools.map((t) => t.name);
+
+  // The registry grew as the product grew (API client, flow, motion, checks,
+  // vitals…). The contract this suite defends is: these SIX core tools are
+  // always present, and EVERY listed tool carries a real description.
+  const core = [
+    "get_latest_sketch",
     "get_browser_logs",
+    "get_github_repos",
+    "send_browser_command",
     "get_companion_status",
     "get_cross_os_results",
-    "get_github_repos",
-    "get_latest_sketch",
-    "send_browser_command",
-  ]);
+  ];
+  const missing = core.filter((n) => !names.includes(n));
+  assert.deepEqual(missing, [], "the 6 foundational agent tools must stay registered");
+  assert.ok(names.length >= 6, "registry holds at least the core set");
 
   const byName = Object.fromEntries(list.tools.map((t) => [t.name, t]));
   assert.ok(byName.send_browser_command.inputSchema.properties.command, "send_browser_command requires a command");

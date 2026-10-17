@@ -84,14 +84,50 @@ function handledCaseBlock(type) {
 }
 
 // The SEND_LOGS_TO_AGENT / FLUSH_NOW reply is constructed inside
-// lib/log-sender.js's flush(); cases that delegate include that sender text.
+// lib/log-sender.js's flush(); cases that delegate via `.then(sendResponse)`
+// reply from the module they call — follow the call to its source file.
 const logSenderSrc = fs.readFileSync(rootPath("lib/log-sender.js"), "utf8");
+const repoJsFiles = ["background.js", "editor", "lib", "logs", "os-test", "server"].flatMap((d) => {
+  const p = rootPath(d);
+  const walk = (q) => fs.readdirSync(q).flatMap((f) => {
+    const full = path.join(q, f);
+    if (fs.statSync(full).isDirectory()) return walk(full);
+    return full.endsWith(".js") ? [full] : [];
+  });
+  return walk(p.slice(-1) === "/" || fs.statSync(p).isDirectory() ? p : rootPath("."));
+});
 function replyTextFor(type) {
-  const block = handledCaseBlock(type) || "";
+  let block = handledCaseBlock(type) || "";
   if (/flush\(\)/.test(block)) {
     const i = logSenderSrc.indexOf("async flush()");
-    return block + "\n" + logSenderSrc.slice(i, logSenderSrc.indexOf("export const", i));
+    block += "\n" + logSenderSrc.slice(i, logSenderSrc.indexOf("export const", i));
   }
+  // X(...).then(sendResponse) → the module implementing X owns the reply shape
+  const followed = new Set();
+  const followName = (fn) => {
+    if (followed.has(fn)) return;
+    for (const file of repoJsFiles) {
+      const src = fs.readFileSync(file, "utf8");
+      const def = new RegExp(`export\\s+(?:async\\s+)?(?:function\\s+${fn}\\b|const\\s+${fn}\\s*=|class\\s+${fn}\\b)`);
+      if (def.test(src)) {
+        followed.add(fn);
+        block += "\n" + src;
+        break;
+      }
+    }
+  };
+  for (const m of block.matchAll(/(\w+)\(\{?[^;]*?\)\.then\(sendResponse\)/g)) {
+    const fn = m[1];
+    if (/^(resolveTargetTab|waitForCommand|runChecks)$/.test(fn)) continue; // infra helpers, not reply values
+    followName(fn);
+  }
+  // chained forms too: X(...).then(toggleXray).then(sendResponse)
+  for (const m of block.matchAll(/\.then\(\s*(\w+)\s*\)\s*\.then\(\s*sendResponse/g)) {
+    followName(m[1]);
+  }
+  // spread replays (`return { ok: true, ...tokensFromRaw(result) }`) — follow
+  // any identifier used in a spread that resolves to a module export
+  for (const m of block.matchAll(/\.\.\.(\w+)\(/g)) followName(m[1]);
   return block;
 }
 

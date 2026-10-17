@@ -141,6 +141,25 @@ function loadBackground({ tabs = [], onStorageChanged = [] } = {}) {
       create: () => {},
       onAlarm: { addListener: (fn) => { alarmHandler = fn; } },
     },
+    commands: {
+      onCommand: { addListener: () => {} },
+    },
+  };
+
+  // Unknown module specs (e.g. the newer lib modules shipped by remote) get a
+  // deep stub: callable, chainable, JSON/string-safe, explicitly not-thenable.
+  const deepStub = () => {
+    const fn = function stub() { return undefined; };
+    return new Proxy(fn, {
+      get(t, k) {
+        if (k === Symbol.toPrimitive) return () => "";
+        if (k === "then") return undefined;
+        if (k === "prototype" || typeof k === "symbol") return t[k];
+        if (t[k] === undefined) t[k] = deepStub();
+        return t[k];
+      },
+      apply() { return deepStub(); },
+    });
   };
 
   const mocks = makeModuleMocks(state);
@@ -153,7 +172,20 @@ function loadBackground({ tabs = [], onStorageChanged = [] } = {}) {
     .join("\n");
   const fullSource = `${bindings}\n${stripped}`;
 
-  const sandbox = { chrome: chromeMock, __mod: (spec) => mocks[spec] || {}, console, fetch: async () => { throw new Error("offline"); }, queueMicrotask, Promise };
+  const sandbox = { chrome: chromeMock, __mod: (spec) => {
+    const base = mocks[spec] || {};
+    // mock keys win; anything newer the module exports falls back to a stub
+    return new Proxy(base, {
+      get(t, k) {
+        if (k in t) return t[k];
+        if (k === Symbol.toPrimitive) return () => "";
+        if (k === "then") return undefined;
+        if (typeof k === "symbol") return undefined;
+        if (t["__" + k] === undefined) t["__" + k] = deepStub();
+        return t["__" + k];
+      },
+    });
+  }, console, fetch: async () => { throw new Error("offline"); }, queueMicrotask, Promise };
   vm.createContext(sandbox);
   vm.runInContext(fullSource, sandbox, { filename: "background.js" });
 

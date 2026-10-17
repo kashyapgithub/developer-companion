@@ -40,9 +40,49 @@ function toCommonScript(source, { wrap = false } = {}) {
   // Node CLI scripts start with a shebang, which is invalid inside vm.Script.
   source = source.replace(/^#![^\n]*/gm, "");
 
+  // Build a char-is-CODE mask: an `import` only exists in real code, never
+  // inside comments, strings, or template literals. (A demo import inside a
+  // JSDoc example would otherwise be rewritten into `*/`-bearing text that
+  // terminates the enclosing comment early.)
+  const codeMask = new Uint8Array(source.length);
+  {
+    let inBlockComment = false, inLineComment = false, inTemplate = false;
+    for (let i = 0; i < source.length; i++) {
+      const ch = source[i], next = source[i + 1], prev = source[i - 1];
+      if (!inBlockComment && !inLineComment && !inTemplate) {
+        if (ch === "/" && next === "*") { inBlockComment = true; i++; continue; }
+        if (ch === "/" && next === "/") { inLineComment = true; continue; }
+        if (ch === '"' || ch === "'") {
+          const quote = ch; // skip a normal string literal
+          i++;
+          while (i < source.length && source[i] !== quote) {
+            if (source[i] === "\\") i++;
+            i++;
+          }
+          continue;
+        }
+        if (ch === "`") { inTemplate = true; continue; }
+        codeMask[i] = 1;
+        continue;
+      }
+      if (inLineComment) {
+        if (ch === "\n") { inLineComment = false; codeMask[i] = 1; }
+        continue;
+      }
+      if (inBlockComment) {
+        if (ch === "*" && next === "/") { inBlockComment = false; i++; }
+        continue;
+      }
+      // inside a template literal — a real import never appears inside ${...}
+      if (ch === "`" && prev !== "\\") { inTemplate = false; codeMask[i] = 0; continue; }
+    }
+  }
+  const isCode = (idx) => idx < codeMask.length && codeMask[idx] === 1;
+
   // Pass A: multi-line named imports (e.g. `import {\n a,\n b\n} from "x";`)
   // (?<![\w$.]) guards against identifiers like `importInput.addEventListener`.
-  source = source.replace(/(?<![\w$.])import\s*\{([^}]*)\}\s*from\s*["']([^"']+)["'];?/g, (_, names, spec) => {
+  source = source.replace(/(?<![\w$.])import\s*\{([^}]*)\}\s*from\s*["']([^"']+)["'];?/g, (full, names, spec, offset) => {
+    if (!isCode(offset)) return full; // inside comment/string — demo text, not an import
     imports.push({
       names: names.split(",").map((s) => s.trim().split(/\s+as\s+/)[0]).filter(Boolean),
       spec,
@@ -54,6 +94,7 @@ function toCommonScript(source, { wrap = false } = {}) {
   let out = source.replace(/^[ \t]*import(?![\w$])\s*(.+?)\s*[;]?\s*$/gm, (line, body0, offset, str) => {
     /* Pass A already handled its shapes */
     if (line.includes("import stripped")) return line;
+    if (!isCode(offset + (line.length - line.trimStart().length))) return line; // demo text in a comment
     const body = line.replace(/^[ \t]*import\s*/, "").replace(/;\s*$/, "");
     const namedMatch = body.match(/^\{([^}]*)\}\s*from\s*["']([^"']+)["']$/);
     const defaultMatch = body.match(/^(\w+(?:\s*,\s*\{[^}]*\})?)\s*from\s*["']([^"']+)["']$/);
@@ -79,7 +120,10 @@ function toCommonScript(source, { wrap = false } = {}) {
 
   out = out
     .replace(/^export\s+(async\s+)?(function|const|let|var|class)\b/gm, "$1$2")
-    .replace(/^export\s+\{[\s\S]*?\};\s*$/gm, "/* export block stripped */")
+    // single-LINE re-export blocks only (`export { noTab } from …;`) — a
+    // greedy multi-line version once swallowed a whole `export const X = {…}`
+    // object that happened to contain an inner `};`-terminated line.
+    .replace(/^export\s+\{[^{}]*\}\s*(?:from\s*[^;]*)?;\s*$/gm, "/* export block stripped */")
     .replace(/^export\s+default\s+/gm, "/* default export stripped: */ ");
 
   if (wrap) {

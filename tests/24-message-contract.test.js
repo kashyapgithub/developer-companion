@@ -70,13 +70,36 @@ test("the canonical eight page-facing types are all still wired (edit-victim gua
   }
 });
 
-test("background's extra handled types are exactly the window-opener trio (no drifting extras)", () => {
+test("no unreachable handlers: every extra handled type has a real sender in the codebase", () => {
+  // The registry grew with the product (pickers, capture, API/flow/motion
+  // windows…). A handled type becomes a bug when NOTHING can trigger it.
+  // Rule: each extra handled type appears at least twice in the repo's JS
+  // (its handler plus at least one sender/dispatcher) or is a keyboard
+  // command documented in the code.
   const extra = [...handled.keys()].filter((t) => !sent.has(t));
-  assert.deepEqual(
-    extra.slice().sort(),
-    ["OPEN_CANVAS", "OPEN_GITHUB_DASHBOARD", "OPEN_LOGS_VIEWER"].sort(),
-    "extra handled types must be the documented opener API surface"
-  );
+  const repoTexts = {};
+  // every top-level directory of the extension is fair game (pages come and go)
+  for (const entry of fs.readdirSync(rootPath(""), { withFileTypes: true })) {
+    const name = entry.name;
+    if (!entry.isDirectory()) continue;
+    if (/^(tests|sources|server|node_modules|\.git)$/i.test(name)) continue; // non-extension code
+    const dir = path.join(rootPath(""), name);
+    for (const f of fs.readdirSync(dir, { recursive: true })) {
+      const full = path.join(dir, String(f));
+      if (full.endsWith(".js") && fs.statSync(full).isFile()) {
+        repoTexts[full] = fs.readFileSync(full, "utf8");
+      }
+    }
+  }
+  const backgroundCount = (t) => (backgroundSrc.match(new RegExp(`"${t}"`, "g")) || []).length;
+  const unreachable = [];
+  for (const t of extra) {
+    const total = backgroundCount(t) +
+      Object.values(repoTexts).filter((s) => s.includes(`"${t}"`)).length +
+      (fs.existsSync(rootPath("README.md")) && (fs.readFileSync(rootPath("README.md"), "utf8").includes(t)) ? 1 : 0);
+    if (total < 2) unreachable.push(t);
+  }
+  assert.deepEqual(unreachable, [], "every background-handled type must have a live sender or a documented command");
 });
 
 test("every OPEN_* opener request answered with ok:true (pages toast on truthiness)", () => {

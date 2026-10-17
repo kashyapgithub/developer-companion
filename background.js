@@ -389,10 +389,9 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     setStreaming(!!message.enabled).then((on) => sendResponse({ ok: true, enabled: on }));
     return true;
   }
-  if (message.type === "STREAM_STATUS") {
-    sendResponse({ ok: true, enabled: isStreaming() });
-    return false;
-  }
+  // Note: the old STREAM_STATUS / REC_STATUS probe handlers were removed —
+  // nothing in the codebase sends those types any more. Live paths are
+  // STREAM_SET / REC_START / REC_STOP / REC_MARK / REC_RETRY / HOVER_STATUS.
 
   // Screenshot the page the user is working on (see lib/tab-capture.js).
   if (message.type === "CAPTURE_TAB") {
@@ -491,10 +490,8 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     addMarker(message.note).then(sendResponse);
     return true;
   }
-  if (message.type === "REC_STATUS") {
-    sendResponse({ state: getRecordingState(), attachedApps: getAttachedAppNames() });
-    return true;
-  }
+  // REC_STATUS probe removed with STREAM_STATUS — recorder state lives in
+  // storage (dcRecording) and the recorder module reads it directly.
 
   if (message.type === "OPEN_GITHUB_DASHBOARD") {
     openOrFocusDashboard().then(() => sendResponse({ ok: true }));

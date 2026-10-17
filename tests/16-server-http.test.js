@@ -93,12 +93,21 @@ test("/health returns the service banner with live stats", async () => {
   assert.ok(json.stats && typeof json.stats.totalLogs === "number", "stats object present");
 });
 
-test("CORS preflight answers 204 with permissive headers", async () => {
-  const res = await fetch(BASE + "/save", { method: "OPTIONS" });
+test("CORS preflight answers 204 with per-origin echo (tightened guard)", async () => {
+  await bootServer; // tolerate that other boot-order tests may be filtered out
+  // Evolved guard: never a wildcard — echoes the caller's origin when allowed,
+  // always publishes methods/headers, and sets Vary: Origin.
+  const origin = "chrome-extension://abcdefabcdefabcdefabcdefabcdef";
+  const res = await fetch(BASE + "/save", { method: "OPTIONS", headers: { Origin: origin } });
   assert.equal(res.status, 204);
-  assert.equal(res.headers.get("access-control-allow-origin"), "*");
-  assert.ok(res.headers.get("access-control-allow-methods").includes("POST"));
-  assert.ok(res.headers.get("access-control-allow-headers").includes("X-Sketch-Token"));
+  assert.equal(res.headers.get("access-control-allow-origin"), origin, "origin echoed, not '*'");
+  assert.equal(res.headers.get("vary"), "Origin", "caching proxies told to vary by origin");
+
+  const bare = await fetch(BASE + "/save", { method: "OPTIONS" });
+  assert.equal(bare.status, 204);
+  assert.equal(bare.headers.get("access-control-allow-origin"), null, "no origin → no wildcard echo");
+  assert.ok(bare.headers.get("access-control-allow-methods").includes("POST"));
+  assert.ok(bare.headers.get("access-control-allow-headers").includes("X-Sketch-Token"));
 });
 
 test("POST /save writes the sketch; health then reports hasSketch", async () => {
